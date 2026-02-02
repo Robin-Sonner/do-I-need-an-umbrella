@@ -1,9 +1,10 @@
 import unittest
 from datetime import datetime, timedelta
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 import numpy as np
 
-from dinau import Location, WeatherClient, CurrentWeatherLite, CurrentWeather
+from dinau import CurrentWeather, CurrentWeatherLite, Location, WeatherClient
 
 
 class MockResponse:
@@ -54,13 +55,15 @@ class MockDataObject:
         return MockVariable(self._variables[index])
 
     def Time(self):
-        return self._time_data.get('time', int(datetime.now().timestamp()))
+        return self._time_data.get("time", int(datetime.now().timestamp()))
 
     def TimeEnd(self):
-        return self._time_data.get('time_end', int((datetime.now() + timedelta(days=1)).timestamp()))
+        return self._time_data.get(
+            "time_end", int((datetime.now() + timedelta(days=1)).timestamp())
+        )
 
     def Interval(self):
-        return self._time_data.get('interval', 3600)
+        return self._time_data.get("interval", 3600)
 
 
 class TestWeatherClientIntegration(unittest.TestCase):
@@ -68,10 +71,10 @@ class TestWeatherClientIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        with patch('location.requests.get') as mock_get:
+        with patch("location.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.json.return_value = {
-                'results': [{'latitude': 49.45, 'longitude': 11.08}]
+                "results": [{"latitude": 49.45, "longitude": 11.08}]
             }
             mock_get.return_value = mock_response
             self.location = Location("Nuremberg")
@@ -80,19 +83,23 @@ class TestWeatherClientIntegration(unittest.TestCase):
         """Test getting current weather in lite mode"""
         mock_meteo = Mock()
 
-        current_data = MockDataObject([
-            15.5,  # temperature
-            14.2,  # apparent_temperature
-            65.0,  # humidity
-            12.5,  # wind_speed
-            3,  # weather_code
-            0.5  # precipitation
-        ])
+        current_data = MockDataObject(
+            [
+                15.5,  # temperature
+                14.2,  # apparent_temperature
+                65.0,  # humidity
+                12.5,  # wind_speed
+                3,  # weather_code
+                0.5,  # precipitation
+            ]
+        )
 
         mock_response = MockResponse(current_data=current_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
-        client = WeatherClient(self.location, rounding_precision=2, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=2, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_current(lite=True)
 
         self.assertIsInstance(weather, CurrentWeatherLite)
@@ -103,27 +110,31 @@ class TestWeatherClientIntegration(unittest.TestCase):
         """Test getting current weather in full mode"""
         mock_meteo = Mock()
 
-        current_data = MockDataObject([
-            15.5,  # temperature
-            14.2,  # apparent_temperature
-            65.0,  # humidity
-            12.5,  # wind_speed
-            180.0,  # wind_direction
-            18.5,  # wind_gust
-            3,  # weather_code
-            0.5,  # precipitation
-            0.0,  # snowfall
-            0.5,  # rain
-            0.0,  # showers
-            75.0,  # cloud_cover
-            1013.0,  # pressure_sea_level
-            1010.0  # pressure_surface_level
-        ])
+        current_data = MockDataObject(
+            [
+                15.5,  # temperature
+                14.2,  # apparent_temperature
+                65.0,  # humidity
+                12.5,  # wind_speed
+                180.0,  # wind_direction
+                18.5,  # wind_gust
+                3,  # weather_code
+                0.5,  # precipitation
+                0.0,  # snowfall
+                0.5,  # rain
+                0.0,  # showers
+                75.0,  # cloud_cover
+                1013.0,  # pressure_sea_level
+                1010.0,  # pressure_surface_level
+            ]
+        )
 
         mock_response = MockResponse(current_data=current_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
-        client = WeatherClient(self.location, rounding_precision=2, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=2, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_current(lite=False)
 
         self.assertIsInstance(weather, CurrentWeather)
@@ -137,10 +148,10 @@ class TestWeatherClientRounding(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        with patch('location.requests.get') as mock_get:
+        with patch("location.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.json.return_value = {
-                'results': [{'latitude': 49.45, 'longitude': 11.08}]
+                "results": [{"latitude": 49.45, "longitude": 11.08}]
             }
             mock_get.return_value = mock_response
             self.location = Location("Nuremberg")
@@ -150,19 +161,23 @@ class TestWeatherClientRounding(unittest.TestCase):
         mock_meteo = Mock()
 
         # Create mock data with values that need rounding
-        current_data = MockDataObject([
-            12.3456,  # temperature
-            11.7891,  # apparent_temperature
-            67.8912,  # humidity
-            15.4567,  # wind_speed
-            3,  # weather_code
-            2.3456  # precipitation
-        ])
+        current_data = MockDataObject(
+            [
+                12.3456,  # temperature
+                11.7891,  # apparent_temperature
+                67.8912,  # humidity
+                15.4567,  # wind_speed
+                3,  # weather_code
+                2.3456,  # precipitation
+            ]
+        )
 
         mock_response = MockResponse(current_data=current_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
-        client = WeatherClient(self.location, rounding_precision=2, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=2, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_current(lite=True)
 
         self.assertEqual(weather.temperature, 12.35)
@@ -175,19 +190,23 @@ class TestWeatherClientRounding(unittest.TestCase):
         """Test that rounding is not applied when precision is None"""
         mock_meteo = Mock()
 
-        current_data = MockDataObject([
-            12.3456,  # temperature
-            11.7891,  # apparent_temperature
-            67.8912,  # humidity
-            15.4567,  # wind_speed
-            3,  # weather_code
-            2.3456  # precipitation
-        ])
+        current_data = MockDataObject(
+            [
+                12.3456,  # temperature
+                11.7891,  # apparent_temperature
+                67.8912,  # humidity
+                15.4567,  # wind_speed
+                3,  # weather_code
+                2.3456,  # precipitation
+            ]
+        )
 
         mock_response = MockResponse(current_data=current_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
-        client = WeatherClient(self.location, rounding_precision=None, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=None, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_current(lite=True)
 
         self.assertEqual(weather.temperature, 12.3456)
@@ -198,20 +217,24 @@ class TestWeatherClientRounding(unittest.TestCase):
         """Test rounding with different precision values"""
         mock_meteo = Mock()
 
-        current_data = MockDataObject([
-            12.3456,  # temperature
-            11.7891,  # apparent_temperature
-            67.8912,  # humidity
-            15.4567,  # wind_speed
-            3,  # weather_code
-            2.3456  # precipitation
-        ])
+        current_data = MockDataObject(
+            [
+                12.3456,  # temperature
+                11.7891,  # apparent_temperature
+                67.8912,  # humidity
+                15.4567,  # wind_speed
+                3,  # weather_code
+                2.3456,  # precipitation
+            ]
+        )
 
         mock_response = MockResponse(current_data=current_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
         # Test with precision = 1
-        client = WeatherClient(self.location, rounding_precision=1, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=1, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_current(lite=True)
 
         self.assertEqual(weather.temperature, 12.3)
@@ -237,11 +260,7 @@ class TestWeatherClientRounding(unittest.TestCase):
                 np.array([3] * 24),  # weather_code
                 np.array([1.230] * 24),  # precipitation
             ],
-            time_data={
-                'time': time_start,
-                'time_end': time_end,
-                'interval': 3600
-            }
+            time_data={"time": time_start, "time_end": time_end, "interval": 3600},
         )
 
         daily_data = MockDataObject([10.0, 20.0, 50.0])
@@ -249,13 +268,22 @@ class TestWeatherClientRounding(unittest.TestCase):
         mock_response = MockResponse(hourly_data=hourly_data, daily_data=daily_data)
         mock_meteo.weather_api.return_value = [mock_response]
 
-        client = WeatherClient(self.location, rounding_precision=2, meteo=lambda session: mock_meteo)
+        client = WeatherClient(
+            self.location, rounding_precision=2, meteo=lambda session: mock_meteo
+        )
         weather = client.get_weather_today(lite=True)
 
         # Check that values in dataframe are rounded
-        self.assertAlmostEqual(weather.hourly_data['temperature'].iloc[0], 12.35, places=2)
-        self.assertAlmostEqual(weather.hourly_data['apparent_temperature'].iloc[0], 11.23, places=2)
-        self.assertAlmostEqual(weather.hourly_data['precipitation'].iloc[0], 1.23, places=2)
+        self.assertAlmostEqual(
+            weather.hourly_data["temperature"].iloc[0], 12.35, places=2
+        )
+        self.assertAlmostEqual(
+            weather.hourly_data["apparent_temperature"].iloc[0], 11.23, places=2
+        )
+        self.assertAlmostEqual(
+            weather.hourly_data["precipitation"].iloc[0], 1.23, places=2
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -1,15 +1,16 @@
 import unittest
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
+
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
 
 from dinau import (
-    WeatherClient,
-    Location,
     CurrentWeather,
     CurrentWeatherLite,
     DailyWeatherLite,
+    Location,
+    WeatherClient,
     WeatherForecastDailyLite,
 )
 
@@ -37,24 +38,27 @@ class TestUmbrellaNeeded(unittest.TestCase):
         if hours is None:
             hours = list(range(24))
 
-        dates = [datetime.now().replace(hour=h, minute=0, second=0, microsecond=0)
-                 for h in hours]
+        dates = [
+            datetime.now().replace(hour=h, minute=0, second=0, microsecond=0)
+            for h in hours
+        ]
 
-        return pd.DataFrame({
-            'date': pd.to_datetime(dates),
-            'temperature': temperatures,
-            'apparent_temperature': [t - 2 for t in temperatures],
-            'humidity': [70] * len(temperatures),
-            'wind_speed': [10] * len(temperatures),
-            'weather_code': [3] * len(temperatures),
-            'precipitation': precipitations
-        })
+        return pd.DataFrame(
+            {
+                "date": pd.to_datetime(dates),
+                "temperature": temperatures,
+                "apparent_temperature": [t - 2 for t in temperatures],
+                "humidity": [70] * len(temperatures),
+                "wind_speed": [10] * len(temperatures),
+                "weather_code": [3] * len(temperatures),
+                "precipitation": precipitations,
+            }
+        )
 
     def test_umbrella_needed_no_rain(self):
         """Test that umbrella is not needed when there's no rain"""
         hourly_df = self.create_hourly_dataframe(
-            temperatures=[15] * 24,
-            precipitations=[0] * 24
+            temperatures=[15] * 24, precipitations=[0] * 24
         )
 
         daily_weather = DailyWeatherLite(
@@ -62,7 +66,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
             temperature_min=10.0,
             temperature_max=20.0,
             precipitation_probability=0.0,
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
 
         self.assertFalse(daily_weather.umbrella_needed())
@@ -70,8 +74,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
     def test_umbrella_needed_heavy_rain(self):
         """Test that umbrella is needed with heavy rain"""
         hourly_df = self.create_hourly_dataframe(
-            temperatures=[15] * 24,
-            precipitations=[5.0] * 24  # Heavy rain all day
+            temperatures=[15] * 24, precipitations=[5.0] * 24  # Heavy rain all day
         )
 
         daily_weather = DailyWeatherLite(
@@ -79,7 +82,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
             temperature_min=10.0,
             temperature_max=20.0,
             precipitation_probability=90.0,
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
 
         self.assertTrue(daily_weather.umbrella_needed())
@@ -90,8 +93,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
         precipitations[7] = 3.0  # Rain at 7 AM (morning, high weight)
 
         hourly_df = self.create_hourly_dataframe(
-            temperatures=[15] * 24,
-            precipitations=precipitations
+            temperatures=[15] * 24, precipitations=precipitations
         )
 
         daily_weather = DailyWeatherLite(
@@ -99,7 +101,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
             temperature_min=10.0,
             temperature_max=20.0,
             precipitation_probability=70.0,
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
 
         # Should need umbrella due to morning rain with high probability
@@ -111,8 +113,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
         precipitations[23] = 2.0  # Rain at 11 PM (night, lower weight)
 
         hourly_df = self.create_hourly_dataframe(
-            temperatures=[15] * 24,
-            precipitations=precipitations
+            temperatures=[15] * 24, precipitations=precipitations
         )
 
         daily_weather = DailyWeatherLite(
@@ -120,7 +121,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
             temperature_min=10.0,
             temperature_max=20.0,
             precipitation_probability=40.0,  # Lower probability
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
 
         # Should not need umbrella due to night rain with lower weight
@@ -136,18 +137,16 @@ class TestUmbrellaNeeded(unittest.TestCase):
         temperatures = [5] * 24
 
         hourly_df = self.create_hourly_dataframe(
-            temperatures=temperatures,
-            precipitations=precipitations
+            temperatures=temperatures, precipitations=precipitations
         )
         daily_weather = DailyWeatherLite(
             timestamp=datetime.now().timestamp(),
             temperature_min=5.0,
             temperature_max=5.0,
             precipitation_probability=80.0,
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
         self.assertTrue(daily_weather.umbrella_needed())
-
 
     def test_umbrella_forecast_multiple_days(self):
         """Test umbrella_needed for multiple days in forecast"""
@@ -180,27 +179,41 @@ class TestUmbrellaNeeded(unittest.TestCase):
             else:
                 precipitations.append(0)
 
-        hourly_df = pd.DataFrame({
-            'date': pd.to_datetime(dates),
-            'temperature': temperatures,
-            'apparent_temperature': [t - 2 for t in temperatures],
-            'humidity': [70] * len(temperatures),
-            'wind_speed': [10] * len(temperatures),
-            'weather_code': [3] * len(temperatures),
-            'precipitation': precipitations
-        })
+        hourly_df = pd.DataFrame(
+            {
+                "date": pd.to_datetime(dates),
+                "temperature": temperatures,
+                "apparent_temperature": [t - 2 for t in temperatures],
+                "humidity": [70] * len(temperatures),
+                "wind_speed": [10] * len(temperatures),
+                "weather_code": [3] * len(temperatures),
+                "precipitation": precipitations,
+            }
+        )
 
-        daily_df = pd.DataFrame({
-            'date': pd.to_datetime([base_date, base_date + timedelta(days=1), base_date + timedelta(days=2)]),
-            'temperature_min': [10.0, 10.0, 10.0],
-            'temperature_max': [20.0, 20.0, 20.0],
-            'precipitation_probability': [0.0, 90.0, 20.0]  # Low probability for day 3
-        })
+        daily_df = pd.DataFrame(
+            {
+                "date": pd.to_datetime(
+                    [
+                        base_date,
+                        base_date + timedelta(days=1),
+                        base_date + timedelta(days=2),
+                    ]
+                ),
+                "temperature_min": [10.0, 10.0, 10.0],
+                "temperature_max": [20.0, 20.0, 20.0],
+                "precipitation_probability": [
+                    0.0,
+                    90.0,
+                    20.0,
+                ],  # Low probability for day 3
+            }
+        )
 
         forecast = WeatherForecastDailyLite(
             timestamp=datetime.now().timestamp(),
             daily_data=daily_df,
-            hourly_data=hourly_df
+            hourly_data=hourly_df,
         )
 
         results = forecast.umbrella_needed()
@@ -210,5 +223,6 @@ class TestUmbrellaNeeded(unittest.TestCase):
         self.assertTrue(results[1])  # Day 2: heavy rain
         self.assertFalse(results[2])  # Day 3: very light rain at night, low probability
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
