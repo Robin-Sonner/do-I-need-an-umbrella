@@ -11,7 +11,7 @@ from dinau import (
     DailyWeatherLite,
     Location,
     WeatherClient,
-    WeatherForecastDailyLite,
+    WeatherForecastLite,
 )
 
 
@@ -210,7 +210,7 @@ class TestUmbrellaNeeded(unittest.TestCase):
             }
         )
 
-        forecast = WeatherForecastDailyLite(
+        forecast = WeatherForecastLite(
             timestamp=datetime.now().timestamp(),
             daily_data=daily_df,
             hourly_data=hourly_df,

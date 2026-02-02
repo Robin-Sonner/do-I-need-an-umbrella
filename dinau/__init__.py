@@ -6,8 +6,8 @@ from .models import (
     CurrentWeatherLite,
     DailyWeather,
     DailyWeatherLite,
-    WeatherForecastDaily,
-    WeatherForecastDailyLite,
+    WeatherForecast,
+    WeatherForecastLite,
 )
 
 __all__ = [
@@ -17,7 +17,9 @@ __all__ = [
     "CurrentWeather",
     "DailyWeatherLite",
     "DailyWeather",
-    "WeatherForecastDailyLite",
-    "WeatherForecastDaily",
+    "WeatherForecastLite",
+    "WeatherForecast",
     "AirQualityIndex",
 ]
+
+__version__ = "0.1.0"

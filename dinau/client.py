@@ -14,8 +14,8 @@ from .models import (
     CurrentWeatherLite,
     DailyWeather,
     DailyWeatherLite,
-    WeatherForecastDaily,
-    WeatherForecastDailyLite,
+    WeatherForecast,
+    WeatherForecastLite,
 )
 
 
@@ -291,7 +291,7 @@ class WeatherClient:
                 "precipitation": self._get_values(5, hourly),
             }
 
-            return WeatherForecastDailyLite(
+            return WeatherForecastLite(
                 timestamp=now,
                 daily_data=pd.DataFrame(daily_data),
                 hourly_data=pd.DataFrame(hourly_data),
@@ -327,7 +327,7 @@ class WeatherClient:
                 "pressure_surface_level": self._get_values(13, hourly),
             }
 
-            return WeatherForecastDaily(
+            return WeatherForecast(
                 timestamp=now,
                 daily_data=pd.DataFrame(daily_data),
                 hourly_data=pd.DataFrame(hourly_data),

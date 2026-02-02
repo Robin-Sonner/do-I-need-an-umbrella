@@ -188,7 +188,7 @@ class DailyWeather(DailyWeatherLite):
 
 
 @dataclass
-class WeatherForecastDailyLite:
+class WeatherForecastLite:
     """
     Weather forecast for multiple days. Only the most important information.
 
@@ -273,7 +273,7 @@ class WeatherForecastDailyLite:
 
 
 @dataclass
-class WeatherForecastDaily(WeatherForecastDailyLite):
+class WeatherForecast(WeatherForecastLite):
     """
     Weather forecast for multiple days. Comprehensive information.
 
