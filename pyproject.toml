@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=80.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dinau"
+version = "0.1.0"
+description = "dinau (Do I need an umbrella?) is a library wrapping the open-meto api to provide weather information"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+
+authors = [
+    { name = "Robin Sonner", email = "robinsonner@web.de" }
+]
+
+dependencies = [
+    "numpy ~= 2.4.2",
+    "openmeteo-requests ~= 1.7.5",
+    "pandas ~= 3.0.0",
+    "requests ~=2.32.5",
+    "requests-cache~=1.2.1",
+    "retry-requests ~=2.0.0",
+]
+
+keywords = [
+    "weather",
+    "open-meteo",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+]
+
+[project.optional-dependencies]
+gui = [
+    "PyQt6 ~= 6.10.2"
+]
+dev = [
+    "black >= 26.1.0",
+    "isort >= 7.0.0",
+    "pyinstaller >= 6.18.0",
+    "sphinx >= 9.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Robin-Sonner/do-I-need-an-umbrella"
+
+[tool.setuptools]
+package-dir = {"" = "dinau"}
+
+[tool.isort]
+profile = "black"
