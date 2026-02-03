@@ -59,6 +59,7 @@ class CurrentWeather:
 class CurrentWeatherLite:
     """
     Current weather conditions. Only the most important information.
+
     Attributes:
         timestamp: Time of the request (Unix Timestamp)
         temperature: Current temperature in Celsius

@@ -1,18 +1,10 @@
 import unittest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 
-from dinau import (
-    CurrentWeather,
-    CurrentWeatherLite,
-    DailyWeatherLite,
-    Location,
-    WeatherClient,
-    WeatherForecastLite,
-)
+from dinau import DailyWeatherLite, WeatherForecastLite
 
 
 class MockVariable:

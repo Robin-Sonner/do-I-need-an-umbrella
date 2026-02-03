@@ -62,6 +62,7 @@ class WeatherClient:
     ):
         """
         Initialize the Weather Client.
+
         Attributes:
             location: Location to get weather forecasts for
             rounding_precision: Rounding precision for all numeric values. If None, no rounding is performed.
@@ -79,8 +80,10 @@ class WeatherClient:
     ) -> CurrentWeather | CurrentWeatherLite:
         """
         Retrieve the current weather.
+
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
+
         Returns:
             CurrentWeather | CurrentWeatherLite: Dataclass holding information about the current weather.
         """
@@ -128,8 +131,10 @@ class WeatherClient:
     def get_weather_today(self, lite: bool = False):
         """
         Retrieve the today's weather.
+
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
+
         Returns:
             DailyWeather | DailyWeatherLite: Dataclass holding information about the current weather.
         """
@@ -342,9 +347,11 @@ class WeatherClient:
     def _get_values(self, key: int, data: Any):
         """
         Get numpy array values with optional rounding applied.
+
         Args:
             key: Variable index
             data: Data object containing the variables
+
         Returns:
             numpy array with values, optionally rounded
         """

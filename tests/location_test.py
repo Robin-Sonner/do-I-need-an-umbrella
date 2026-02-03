@@ -7,7 +7,7 @@ from dinau import Location
 class TestLocation(unittest.TestCase):
     """Test Location class"""
 
-    @patch("location.requests.get")
+    @patch("dinau.location.requests.get")
     def test_location_fetch_coordinates(self, mock_get):
         """Test that coordinates are fetched correctly"""
         mock_response = Mock()
@@ -22,7 +22,7 @@ class TestLocation(unittest.TestCase):
         self.assertEqual(location.longitude, 11.0767)
         self.assertEqual(location.name, "Nuremberg")
 
-    @patch("location.requests.get")
+    @patch("dinau.location.requests.get")
     def test_location_not_found(self, mock_get):
         """Test handling of location not found"""
         mock_response = Mock()
@@ -34,7 +34,7 @@ class TestLocation(unittest.TestCase):
 
         self.assertIn("not found", str(context.exception))
 
-    @patch("location.requests.get")
+    @patch("dinau.location.requests.get")
     def test_location_connection_error(self, mock_get):
         """Test handling of connection errors"""
         import requests

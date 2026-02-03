@@ -71,7 +71,7 @@ class TestWeatherClientIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        with patch("location.requests.get") as mock_get:
+        with patch("dinau.location.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "results": [{"latitude": 49.45, "longitude": 11.08}]
@@ -148,7 +148,7 @@ class TestWeatherClientRounding(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        with patch("location.requests.get") as mock_get:
+        with patch("dinau.location.requests.get") as mock_get:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "results": [{"latitude": 49.45, "longitude": 11.08}]
