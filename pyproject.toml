@@ -41,7 +41,9 @@ classifiers = [
 
 [project.optional-dependencies]
 gui = [
-    "PyQt6 ~= 6.10.2"
+    "PyQt6 ~= 6.10.2",
+    "matplotlib ~= 3.10.8",
+    "pyqtgraph ~= 0.14.0",
 ]
 dev = [
     "black >= 26.1.0",
