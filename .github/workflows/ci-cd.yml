@@ -1,0 +1,58 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      
+      - name: Setup virtual environment
+        shell: pwsh
+        run: |
+          python --version
+          python -m venv venv
+          .\venv\Scripts\Activate.ps1
+          python.exe -m pip install --upgrade pip
+          pip install -e .[dev,gui]
+      
+      - name: Linting
+        shell: pwsh
+        run: |
+          .\venv\Scripts\Activate.ps1
+          flake8 . --extend-ignore=E501 --exclude=.\venv
+      
+      - name: Format Check
+        shell: pwsh
+        run: |
+          .\venv\Scripts\Activate.ps1
+          black --check .
+          isort --check-only .
+      
+      - name: Run Tests
+        shell: pwsh
+        run: |
+          .\venv\Scripts\Activate.ps1
+          python -m unittest discover -s tests -p "*_test.py" -v
+      
+      - name: Build Documentation
+        shell: pwsh
+        run: |
+          .\venv\Scripts\Activate.ps1
+          cd .\docs
+          .\make.bat html -W
