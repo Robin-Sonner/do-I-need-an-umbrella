@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Air Quality Information (Library + Application)
 - WeatherForecasts and Settings (Application)
 
+## [0.0.3] - 2026-02-05
+
+### Fixed
+
+- GitHub Action Pipeline now has write permission
+
+
 ## [0.0.2] - 2026-02-05
 
 ### Added
