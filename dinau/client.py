@@ -62,7 +62,6 @@ class WeatherClient:
     ):
         """
         Initialize the Weather Client.
-
         Attributes:
             location: Location to get weather forecasts for
             rounding_precision: Rounding precision for all numeric values. If None, no rounding is performed.
@@ -80,10 +79,8 @@ class WeatherClient:
     ) -> CurrentWeather | CurrentWeatherLite:
         """
         Retrieve the current weather.
-
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
-
         Returns:
             CurrentWeather | CurrentWeatherLite: Dataclass holding information about the current weather.
         """
@@ -131,10 +128,8 @@ class WeatherClient:
     def get_weather_today(self, lite: bool = False):
         """
         Retrieve the today's weather.
-
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
-
         Returns:
             DailyWeather | DailyWeatherLite: Dataclass holding information about the current weather.
         """
@@ -218,17 +213,17 @@ class WeatherClient:
         if lite:
             weather = DailyWeatherLite(
                 timestamp=now,
-                temperature_min=self._get_value(0, daily),
-                temperature_max=self._get_value(1, daily),
-                precipitation_probability=self._get_value(2, daily),
+                temperature_min=self._get_values(0, daily)[0],
+                temperature_max=self._get_values(1, daily)[0],
+                precipitation_probability=self._get_values(2, daily)[0],
                 hourly_data=hourly_dataframe,
             )
         else:
             weather = DailyWeather(
                 timestamp=now,
-                temperature_min=self._get_value(0, daily),
-                temperature_max=self._get_value(1, daily),
-                precipitation_probability=self._get_value(2, daily),
+                temperature_min=self._get_values(0, daily)[0],
+                temperature_max=self._get_values(1, daily)[0],
+                precipitation_probability=self._get_values(2, daily)[0],
                 hourly_data=hourly_dataframe,
             )
         return weather
@@ -347,11 +342,9 @@ class WeatherClient:
     def _get_values(self, key: int, data: Any):
         """
         Get numpy array values with optional rounding applied.
-
         Args:
             key: Variable index
             data: Data object containing the variables
-
         Returns:
             numpy array with values, optionally rounded
         """

@@ -9,11 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Air Quality Information
+- Air Quality Information (Library + Application)
+- WeatherForecasts and Settings (Application)
 
+## [0.0.2] - 2026-02-05
 
-## [0.1.0] - 2026-02-02
+### Added
+
+- Initial Application
 
 ### Changed
 
-- First release of the dinau library
+- Test Release of the library and app with the GitHub Actions Pipeline
+
+### Fixed
+
+- Daily Variables (temperature_min, temperature_max, precipitation_probability) 
+  of DailyWeather and DailyWeatherLite are now set to their correct values, instead of always 0
+
+
+## [0.0.1] - 2026-02-04
+
+### Added
+
+- Initial Library
+
+### Changed
+
+- Test Release of the library and app with the Jenkins Pipeline
