@@ -1,6 +1,3 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
-
 WEATHER_DESCRIPTION = {
     0: "Clear sky",
     1: "Mainly clear",
