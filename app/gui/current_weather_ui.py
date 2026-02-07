@@ -28,8 +28,8 @@ class CurrentWeatherWidget(QWidget):
     def _setup_ui(self):
         """Initialize the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
         # Scroll area for content
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -83,8 +83,8 @@ class CurrentWeatherWidget(QWidget):
         card.setProperty("class", "weather-card")
         card.setMinimumHeight(200)
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
 
         # Weather emoji and description
         weather_layout = QHBoxLayout()
@@ -92,11 +92,7 @@ class CurrentWeatherWidget(QWidget):
         emoji_label = QLabel(get_weather_emoji(weather.weather_code))
         emoji_label.setStyleSheet("font-size: 48px;")
         weather_layout.addWidget(emoji_label)
-        desc_label = QLabel(
-            WEATHER_DESCRIPTION.get(
-                weather.weather_code, "Sorry, no description available"
-            )
-        )
+        desc_label = QLabel(WEATHER_DESCRIPTION.get(weather.weather_code, ""))
         desc_label.setProperty("class", "weather-description")
         desc_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter

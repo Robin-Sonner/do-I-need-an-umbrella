@@ -1,5 +1,3 @@
-"""Widget for displaying today's weather information."""
-
 import pyqtgraph as pg
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -163,6 +161,8 @@ class TodayWeatherWidget(QWidget):
         )
         temp_precip_widget.setLabel("bottom", "Hour")
         temp_precip_widget.setTitle("Temperature & Precipitation")
+        temp_precip_widget.setMouseEnabled(x=False, y=False)
+        temp_precip_widget.setMenuEnabled(False)
         # Create hours for x-axis
         hours = [i for i in range(len(df))]
         # Temperature line (left axis)
@@ -175,6 +175,7 @@ class TodayWeatherWidget(QWidget):
         temp_precip_widget.scene().addItem(precip_viewbox)
         temp_precip_widget.getAxis("right").linkToView(precip_viewbox)
         precip_viewbox.setXLink(temp_precip_widget)
+        precip_viewbox.setMouseEnabled(x=False, y=False)
 
         def update_views():
             precip_viewbox.setGeometry(
@@ -215,6 +216,8 @@ class TodayWeatherWidget(QWidget):
         wind_widget.setLabel("left", "Wind Speed", units="km/h", color="#2ecc71")
         wind_widget.setLabel("bottom", "Hour")
         wind_widget.setTitle("Wind Speed")
+        wind_widget.setMouseEnabled(x=False, y=False)
+        wind_widget.setMenuEnabled(False)
 
         # Create a bar graph for wind speed
         bar_graph_wind = pg.BarGraphItem(

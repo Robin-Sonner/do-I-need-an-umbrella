@@ -121,10 +121,8 @@ QFrame[class="info-card"] {
     background-color: #f8fafc;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    padding: 12px;
 }
 
-/* Labels - Fixed with proper line heights */
 QLabel {
     line-height: 1.5;
 }
@@ -133,28 +131,24 @@ QLabel[class="title"] {
     font-size: 24px;
     font-weight: 600;
     color: #1a202c;
-    padding: 4px 0px;
 }
 
 QLabel[class="subtitle"] {
     font-size: 16px;
     font-weight: 500;
     color: #4a5568;
-    padding: 2px 0px;
 }
 
 QLabel[class="temperature-main"] {
     font-size: 64px;
     font-weight: 300;
     color: #2d3748;
-    padding: 8px 0px;
 }
 
 QLabel[class="temperature-range"] {
     font-size: 20px;
     font-weight: 400;
     color: #4a5568;
-    padding: 4px 0px;
 }
 
 QLabel[class="info-label"] {
@@ -163,21 +157,18 @@ QLabel[class="info-label"] {
     color: #718096;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    padding: 2px 0px;
 }
 
 QLabel[class="info-value"] {
     font-size: 20px;
     font-weight: 600;
     color: #2d3748;
-    padding: 4px 0px;
 }
 
 QLabel[class="weather-description"] {
     font-size: 18px;
     font-weight: 400;
     color: #4a5568;
-    padding: 2px 0px;
 }
 
 /* Scroll Area */
@@ -230,7 +221,6 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
 QLabel[class="loading"] {
     font-size: 16px;
     color: #718096;
-    padding: 4px 0px;
 }
 
 /* Error Label */
@@ -264,5 +254,54 @@ QPushButton[class="refresh-btn"]:pressed {
 
 QPushButton[class="refresh-btn"]:disabled {
     background-color: #a0aec0;
+}
+
+/* Save Button */
+QPushButton[class="save-btn"] {
+    background-color: #48bb78;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+QPushButton[class="save-btn"]:hover {
+    background-color: #38a169;
+}
+
+QPushButton[class="save-btn"]:pressed {
+    background-color: #2f855a;
+}
+
+QPushButton[class="save-btn"]:disabled {
+    background-color: #a0aec0;
+}
+
+/* Entry field */
+QLineEdit {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+}
+
+QLineEdit:focus {
+    border-color: #4299e1;
+    outline: none;
+}
+
+/* Charts */
+QFrame[class="chart"] {
+    background-color: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+QFrame[class="chart"]:hover {
+    border-color: #cbd5e0;
 }
 """
