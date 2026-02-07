@@ -18,7 +18,7 @@ from .current_weather_ui import CurrentWeatherWidget
 from .forecast_weather_ui import ForecastWeatherWidget
 from .settings_ui import ConfigManager, SettingsWidget
 from .today_weather_ui import TodayWeatherWidget
-from .utilities import STYLESHEET, create_placeholder
+from .utilities import STYLESHEET
 
 
 class WeatherWorker(QThread):

@@ -65,17 +65,6 @@ def get_weather_emoji(weather_code: int) -> str:
         return ""
 
 
-def create_placeholder() -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout(widget)
-    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    label = QLabel("Coming soon")
-    label.setStyleSheet("font-size: 18px; color: #718096;")
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    layout.addWidget(label)
-    return widget
-
-
 STYLESHEET = """
 /* Main Window */
 QMainWindow {
