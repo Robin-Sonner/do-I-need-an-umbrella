@@ -203,7 +203,10 @@ class WeatherForecastLite:
         - date: datetime of this row
         - temperature_min: Minimum temperature
         - temperature_max: Maximum temperature
+        - temperature_mean: Mean temperature
+        - apparent_temperature_mean: Mean feels-like temperature
         - precipitation_probability: Probability of precipitation (0-100%)
+        - precipitation_sum: Sum of precipitation for the day
         hourly_data contains the columns:
         - date: datetime of this row
         - temperature: Temperature (Celsius)
@@ -272,6 +275,56 @@ class WeatherForecastLite:
 
         return results
 
+    def get_detailed_data(self, section_length: int = 6) -> pd.DataFrame:
+        """
+        Calculate weather data with customized section length
+
+        Args:
+            section_length: Number of hours per section (default: 6 for 4 sections per day)
+
+        Returns:
+            DataFrame with detailed data containing:
+            - date: String representation of the section (e.g., "Jan 01 00-06")
+            - temperature_min: Minimum temperature in the section
+            - temperature_max: Maximum temperature in the section
+            - temperature_mean: Mean temperature in the section
+            - apparent_temperature_mean: Mean feels-like temperature in the section
+            - precipitation_sum: Sum of precipitation for the section
+        """
+        detailed_rows = []
+        # Group hourly data by date
+        dates = self.hourly_data["date"].dt.date.unique()
+        for date in dates:
+            # Filter hourly data for this date
+            day_hourly = self.hourly_data[
+                self.hourly_data["date"].dt.date == date
+            ].copy()
+            # Divide the day into sections
+            num_sections = 24 // section_length
+            for section in range(num_sections):
+                start_hour = section * section_length
+                end_hour = start_hour + section_length
+                # Filter data for this section
+                section_data = day_hourly[
+                    (day_hourly["date"].dt.hour >= start_hour)
+                    & (day_hourly["date"].dt.hour < end_hour)
+                ]
+                if len(section_data) == 0:
+                    continue
+                # Calculate aggregated values for this section
+                detailed_row = {
+                    "date": f"{date.strftime('%b %d')} {start_hour:02d}-{end_hour:02d}",
+                    "temperature_min": section_data["temperature"].min(),
+                    "temperature_max": section_data["temperature"].max(),
+                    "temperature_mean": section_data["temperature"].mean(),
+                    "apparent_temperature_mean": section_data[
+                        "apparent_temperature"
+                    ].mean(),
+                    "precipitation_sum": section_data["precipitation"].sum(),
+                }
+                detailed_rows.append(detailed_row)
+        return pd.DataFrame(detailed_rows)
+
 
 @dataclass
 class WeatherForecast(WeatherForecastLite):
@@ -288,7 +341,10 @@ class WeatherForecast(WeatherForecastLite):
         - date: datetime of this row
         - temperature_min: Minimum temperature
         - temperature_max: Maximum temperature
+        - temperature_mean: Mean temperature
+        - apparent_temperature_mean: Mean feels-like temperature
         - precipitation_probability: Probability of precipitation (0-100%)
+        - precipitation_sum: Sum of precipitation for the day
         hourly_data contains the columns:
         - date: datetime of this row
         - temperature: Temperature
