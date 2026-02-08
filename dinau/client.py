@@ -79,8 +79,10 @@ class WeatherClient:
     ) -> CurrentWeather | CurrentWeatherLite:
         """
         Retrieve the current weather.
+
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
+
         Returns:
             CurrentWeather | CurrentWeatherLite: Dataclass holding information about the current weather.
         """
@@ -128,8 +130,10 @@ class WeatherClient:
     def get_weather_today(self, lite: bool = False):
         """
         Retrieve the today's weather.
+
         Args:
              lite: If True, returns only the most important weather information, else returns a detailed report.
+
         Returns:
             DailyWeather | DailyWeatherLite: Dataclass holding information about the current weather.
         """
@@ -239,7 +243,9 @@ class WeatherClient:
             "daily": [
                 "temperature_2m_min",
                 "temperature_2m_max",
-                "precipitation_probability_max",
+                "temperature_2m_mean",
+                "apparent_temperature_mean" "precipitation_probability_max",
+                "precipitation_sum",
             ],
             "hourly": self.LITE_WEATHER if lite else self.FULL_WEATHER,
             "current": ["weather_code"],
@@ -266,7 +272,10 @@ class WeatherClient:
             ),
             "temperature_min": self._get_values(0, daily),
             "temperature_max": self._get_values(1, daily),
-            "precipitation_probability": self._get_values(2, daily),
+            "temperature_mean": self._get_values(2, daily),
+            "apparent_temperature_mean": self._get_values(3, daily),
+            "precipitation_probability": self._get_values(4, daily),
+            "precipitation_sum": self._get_values(5, daily)[0],
         }
 
         if lite:
@@ -342,9 +351,11 @@ class WeatherClient:
     def _get_values(self, key: int, data: Any):
         """
         Get numpy array values with optional rounding applied.
+
         Args:
             key: Variable index
             data: Data object containing the variables
+
         Returns:
             numpy array with values, optionally rounded
         """
