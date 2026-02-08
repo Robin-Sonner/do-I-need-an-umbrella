@@ -6,60 +6,36 @@ on:
       - main
     tags:
       - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
-    
-    outputs:
-      is_release: ${{ steps.check_release.outputs.is_release }}
-      git_tag: ${{ steps.check_release.outputs.git_tag }}
-      release_notes: ${{ steps.check_release.outputs.release_notes }}
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: ['3.12', '3.13', '3.14']
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Set up Python
+
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
-      
-      - name: Check for release
-        id: check_release
-        shell: pwsh
-        run: |
-          $isRelease = "${{ startsWith(github.ref, 'refs/tags/v') }}"
-          
-          if ($isRelease -eq "true") {
-            $tag = "${{ github.ref_name }}"
-            Write-Host "Building Release $tag"
-            
-            # Get the annotated tag message (release notes)
-            $releaseNotes = git tag -l --format='%(contents)' $tag
-            Write-Host "Release notes: $releaseNotes"
-            
-            echo "is_release=true" >> $env:GITHUB_OUTPUT
-            echo "git_tag=$tag" >> $env:GITHUB_OUTPUT
-            
-            # Handle multiline release notes
-            $delimiter = "EOF_RELEASE_NOTES_$(Get-Random)"
-            echo "release_notes<<$delimiter" >> $env:GITHUB_OUTPUT
-            echo "$releaseNotes" >> $env:GITHUB_OUTPUT
-            echo "$delimiter" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Host "Building regular commit (no release)"
-            echo "is_release=false" >> $env:GITHUB_OUTPUT
-            echo "git_tag=" >> $env:GITHUB_OUTPUT
-            echo "release_notes=" >> $env:GITHUB_OUTPUT
-          }
-      
-      - name: Setup virtual environment
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Setup virtual environment (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           python --version
@@ -67,42 +43,149 @@ jobs:
           .\venv\Scripts\Activate.ps1
           python.exe -m pip install --upgrade pip
           pip install -e .[dev,gui]
-      
-      - name: Linting
+
+      - name: Setup virtual environment (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          python --version
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -e .[dev,gui]
+
+      - name: Linting (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           .\venv\Scripts\Activate.ps1
           flake8 . --extend-ignore=E501 --exclude=.\venv
-      
-      - name: Format Check
+
+      - name: Linting (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          source venv/bin/activate
+          flake8 . --extend-ignore=E501 --exclude=./venv
+
+      - name: Format Check (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           .\venv\Scripts\Activate.ps1
           black --check .
           isort --check-only .
-      
-      - name: Run Tests
+
+      - name: Format Check (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          source venv/bin/activate
+          black --check .
+          isort --check-only .
+
+      - name: Run Tests (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           .\venv\Scripts\Activate.ps1
           python -m unittest discover -s tests -p "*_test.py" -v
-      
-      - name: Build Documentation
+
+      - name: Run Tests (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          source venv/bin/activate
+          python -m unittest discover -s tests -p "*_test.py" -v
+
+      - name: Build Documentation (Windows)
+        if: runner.os == 'Windows' && matrix.python-version == '3.14'
         shell: pwsh
         run: |
           .\venv\Scripts\Activate.ps1
           cd .\docs
           .\make.bat html -W
-      
+
+      - name: Build Documentation (Linux)
+        if: runner.os == 'Linux' && matrix.python-version == '3.14'
+        shell: bash
+        run: |
+          source venv/bin/activate
+          cd ./docs
+          make html -W
+
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check_release.outputs.is_release }}
+      git_tag: ${{ steps.check_release.outputs.git_tag }}
+      release_notes: ${{ steps.check_release.outputs.release_notes }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for release
+        id: check_release
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            tag="${{ github.ref_name }}"
+            echo "Building Release $tag"
+            
+            # Get the annotated tag message (release notes)
+            releaseNotes=$(git tag -l --format='%(contents)' "$tag")
+            echo "Release notes: $releaseNotes"
+            
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "git_tag=$tag" >> $GITHUB_OUTPUT
+            
+            # Handle multiline release notes
+            {
+              echo "release_notes<<EOF_RELEASE_NOTES"
+              echo "$releaseNotes"
+              echo "EOF_RELEASE_NOTES"
+            } >> $GITHUB_OUTPUT
+          else
+            echo "Building regular commit (no release)"
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "git_tag=" >> $GITHUB_OUTPUT
+            echo "release_notes=" >> $GITHUB_OUTPUT
+          fi
+
+  build-executable:
+    needs: [build-and-test, check-release]
+    if: needs.check-release.outputs.is_release == 'true'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+
+      - name: Setup virtual environment and install dependencies
+        shell: pwsh
+        run: |
+          python -m venv venv
+          .\venv\Scripts\Activate.ps1
+          pip install --upgrade pip
+          pip install -e .[gui]
+          pip install pyinstaller
+
       - name: Build executable
-        if: steps.check_release.outputs.is_release == 'true'
         shell: pwsh
         run: |
           .\venv\Scripts\Activate.ps1
           pyinstaller --onefile app\main.py --name dinau
-      
+
       - name: Upload executable artifact
-        if: steps.check_release.outputs.is_release == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dinau-executable
@@ -110,74 +193,65 @@ jobs:
           retention-days: 7
 
   publish-testpypi:
-    needs: build-and-test
-    if: needs.build-and-test.outputs.is_release == 'true'
-    runs-on: windows-latest
-    
+    needs: [build-and-test, check-release]
+    if: needs.check-release.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.14'
-      
-      - name: Setup virtual environment
-        shell: pwsh
+          cache: 'pip'
+
+      - name: Install build tools
+        shell: bash
         run: |
-          python -m venv venv
-          .\venv\Scripts\Activate.ps1
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install build twine
-      
+
       - name: Build package
-        shell: pwsh
-        run: |
-          .\venv\Scripts\Activate.ps1
-          python -m build
-      
+        shell: bash
+        run: python -m build
+
       - name: Publish to TestPyPI
-        shell: pwsh
+        shell: bash
         env:
           TESTPYPI_TOKEN: ${{ secrets.TESTPYPI_TOKEN }}
         run: |
-          .\venv\Scripts\Activate.ps1
-          python -m twine upload --repository testpypi dist/*.whl dist/*.tar.gz --username __token__ --password $env:TESTPYPI_TOKEN --verbose
+          python -m twine upload \
+            --repository testpypi \
+            dist/*.whl dist/*.tar.gz \
+            --username __token__ \
+            --password "$TESTPYPI_TOKEN" \
+            --verbose
 
   publish-release:
-    needs: build-and-test
-    if: needs.build-and-test.outputs.is_release == 'true'
-    runs-on: windows-latest
-    
+    needs: [build-executable, check-release]
+    if: needs.check-release.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Download executable artifact
         uses: actions/download-artifact@v4
         with:
           name: dinau-executable
           path: dist
-      
+
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.build-and-test.outputs.git_tag }}
-          release_name: ${{ needs.build-and-test.outputs.git_tag }}
-          body: ${{ needs.build-and-test.outputs.release_notes }}
+          tag_name: ${{ needs.check-release.outputs.git_tag }}
+          name: ${{ needs.check-release.outputs.git_tag }}
+          body: ${{ needs.check-release.outputs.release_notes }}
           draft: false
           prerelease: false
-      
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/dinau.exe
-          asset_name: dinau-${{ needs.build-and-test.outputs.git_tag }}.exe
-          asset_content_type: application/octet-stream
+          files: |
+            dist/dinau.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
