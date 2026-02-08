@@ -5,8 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### Unreleased
 
-### [0.0.4] - 2026-02-08
+### Changed
+- prettier charts in the today's weather tab
+
+
+### [0.1.0] - 2026-02-08
 
 ### Added
 
@@ -22,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed: Strings no longer cut off at the top and bottom
 
+### [0.0.4] - 2026-02-08
+
+## Changed
+
+- Test Release through the new GitHub Actions Pipeline (Matrix Testing, Windows and Linux + multiple Python Versions)
 
 ## [0.0.3] - 2026-02-05
 

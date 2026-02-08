@@ -1,6 +1,4 @@
-import pyqtgraph as pg
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+import pandas as pd
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFrame,
@@ -10,21 +8,19 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from pyqtgraph import PlotWidget
 
 from dinau import DailyWeather
 
 from .utilities import get_weather_emoji
+from .weather_charts import WeatherCharts
 
 
 class TodayWeatherWidget(QWidget):
-    """Widget to display today's weather conditions"""
+    """Widget to display today's weather conditions."""
 
     def __init__(self, parent=None, use_pyqtgraph=True):
         super().__init__(parent)
-        self.use_pyqtgraph = use_pyqtgraph
-        if self.use_pyqtgraph:
-            pg.setConfigOptions(antialias=True)
+        self.chart_factory = WeatherCharts(use_pyqtgraph=use_pyqtgraph)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -66,7 +62,7 @@ class TodayWeatherWidget(QWidget):
         Update the display with new weather data.
 
         Args:
-            weather: Today's weather data (full or lite version)
+            weather: Today's weather data
         """
         self._clear_layout()
         # Main overview card
@@ -76,14 +72,10 @@ class TodayWeatherWidget(QWidget):
         if weather.umbrella_needed():
             umbrella_card = TodayWeatherWidget._create_umbrella_card()
             self.content_layout.addWidget(umbrella_card)
-        # Charts
-        if self.use_pyqtgraph:
-            charts_card = TodayWeatherWidget._create_pyqtgraph(weather)
-        else:
-            charts_card = TodayWeatherWidget._create_matplotlib(weather)
+        charts_card = self._create_charts_card(weather.hourly_data)
         self.content_layout.addWidget(charts_card)
         # Hourly forecast
-        hourly_card = TodayWeatherWidget._create_hourly_card(weather)
+        hourly_card = self._create_hourly_card(weather)
         self.content_layout.addWidget(hourly_card)
         # Add stretch to push content to the top
         self.content_layout.addStretch()
@@ -135,9 +127,16 @@ class TodayWeatherWidget(QWidget):
         layout.addStretch()
         return card
 
-    @staticmethod
-    def _create_pyqtgraph(weather: DailyWeather) -> QFrame:
-        """Create charts using pyqtgraph."""
+    def _create_charts_card(self, hourly_data: pd.DataFrame) -> QFrame:
+        """
+        Create the charts card using the WeatherCharts factory.
+
+        Args:
+            hourly_data: DataFrame with hourly weather data
+
+        Returns:
+            QFrame containing the weather charts
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         layout = QVBoxLayout(card)
@@ -147,157 +146,20 @@ class TodayWeatherWidget(QWidget):
         title = QLabel("Weather Charts")
         title.setProperty("class", "subtitle")
         layout.addWidget(title)
-
-        df = weather.hourly_data
-
         # Temperature and Precipitation Chart
-        temp_precip_widget = PlotWidget()
-        temp_precip_widget.setBackground("w")
-        temp_precip_widget.setMinimumHeight(300)
-        temp_precip_widget.showGrid(x=True, y=True, alpha=0.3)
-        temp_precip_widget.setLabel("left", "Temperature", units="°C", color="#e74c3c")
-        temp_precip_widget.setLabel(
-            "right", "Precipitation", units="mm", color="#3498db"
+        temp_precip_chart = self.chart_factory.create_temperature_precipitation_chart(
+            hourly_data
         )
-        temp_precip_widget.setLabel("bottom", "Hour")
-        temp_precip_widget.setTitle("Temperature & Precipitation")
-        temp_precip_widget.setMouseEnabled(x=False, y=False)
-        temp_precip_widget.setMenuEnabled(False)
-        # Create hours for x-axis
-        hours = [i for i in range(len(df))]
-        # Temperature line (left axis)
-        temp_pen = pg.mkPen(color="#e74c3c", width=3)
-        _ = temp_precip_widget.plot(
-            hours, df["temperature"].values, pen=temp_pen, name="Temperature"
-        )
-        # Precipitation bars
-        precip_viewbox = pg.ViewBox()
-        temp_precip_widget.scene().addItem(precip_viewbox)
-        temp_precip_widget.getAxis("right").linkToView(precip_viewbox)
-        precip_viewbox.setXLink(temp_precip_widget)
-        precip_viewbox.setMouseEnabled(x=False, y=False)
-
-        def update_views():
-            precip_viewbox.setGeometry(
-                temp_precip_widget.getViewBox().sceneBoundingRect()
-            )
-            precip_viewbox.linkedViewChanged(
-                temp_precip_widget.getViewBox(), precip_viewbox.XAxis
-            )
-
-        update_views()
-        temp_precip_widget.getViewBox().sigResized.connect(update_views)
-
-        # Create the bar graph for precipitation
-        width = 0.6
-        bar_graph = pg.BarGraphItem(
-            x=hours,
-            height=df["precipitation"].values,
-            width=width,
-            brush="#3498db80",
-            pen=pg.mkPen("#3498db", width=1),
-        )
-        precip_viewbox.addItem(bar_graph)
-
-        # Set the precipitation axis range
-        max_precip = df["precipitation"].max()
-        if max_precip > 0:
-            precip_viewbox.setYRange(0, max_precip * 1.2)
-        else:
-            precip_viewbox.setYRange(0, 1)
-
-        layout.addWidget(temp_precip_widget)
-
+        temp_precip_chart.setMinimumHeight(300)
+        layout.addWidget(temp_precip_chart)
         # Wind Speed Chart
-        wind_widget = PlotWidget()
-        wind_widget.setBackground("w")
-        wind_widget.setMinimumHeight(250)
-        wind_widget.showGrid(x=True, y=True, alpha=0.3)
-        wind_widget.setLabel("left", "Wind Speed", units="km/h", color="#2ecc71")
-        wind_widget.setLabel("bottom", "Hour")
-        wind_widget.setTitle("Wind Speed")
-        wind_widget.setMouseEnabled(x=False, y=False)
-        wind_widget.setMenuEnabled(False)
-
-        # Create a bar graph for wind speed
-        bar_graph_wind = pg.BarGraphItem(
-            x=hours,
-            height=df["wind_speed"].values,
-            width=0.8,
-            brush="#2ecc7180",
-            pen=pg.mkPen("#2ecc71", width=1),
-        )
-        wind_widget.addItem(bar_graph_wind)
-        # Set x-axis ticks to show every 2 hours
-        x_ticks = [(i, str(i)) for i in range(0, 24, 2)]
-        ax = wind_widget.getAxis("bottom")
-        ax.setTicks([x_ticks])
-        layout.addWidget(wind_widget)
-
+        wind_chart = self.chart_factory.create_wind_speed_chart(hourly_data)
+        wind_chart.setMinimumHeight(250)
+        layout.addWidget(wind_chart)
         return card
 
     @staticmethod
-    def _create_matplotlib(weather: DailyWeather) -> QFrame:
-        """Create charts using matplotlib"""
-        card = QFrame()
-        card.setProperty("class", "weather-card")
-
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
-
-        # Title
-        title = QLabel("Weather Charts (Matplotlib)")
-        title.setProperty("class", "subtitle")
-        layout.addWidget(title)
-
-        df = weather.hourly_data
-        hours = list(range(len(df)))
-
-        # Temperature and Precipitation Chart
-        fig1 = Figure(figsize=(8, 4), dpi=100)
-        canvas1 = FigureCanvasQTAgg(fig1)
-        canvas1.setMinimumHeight(300)
-        ax1 = fig1.add_subplot(111)
-        ax2 = ax1.twinx()
-        # Temperature line
-        _ = ax1.plot(
-            hours, df["temperature"].values, "r-", linewidth=2, label="Temperature"
-        )
-        ax1.set_xlabel("Hour")
-        ax1.set_ylabel("Temperature (°C)", color="r")
-        ax1.tick_params(axis="y", labelcolor="r")
-        ax1.grid(True, alpha=0.3)
-        # Precipitation bars
-        _ = ax2.bar(
-            hours,
-            df["precipitation"].values,
-            alpha=0.5,
-            color="b",
-            label="Precipitation",
-        )
-        ax2.set_ylabel("Precipitation (mm)", color="b")
-        ax2.tick_params(axis="y", labelcolor="b")
-        ax1.set_title("Temperature & Precipitation")
-        fig1.tight_layout()
-        layout.addWidget(canvas1)
-
-        # Wind Speed Chart
-        fig2 = Figure(figsize=(8, 3), dpi=100)
-        canvas2 = FigureCanvasQTAgg(fig2)
-        canvas2.setMinimumHeight(250)
-        ax3 = fig2.add_subplot(111)
-        ax3.bar(hours, df["wind_speed"].values, color="g", alpha=0.6)
-        ax3.set_xlabel("Hour")
-        ax3.set_ylabel("Wind Speed (km/h)")
-        ax3.set_title("Wind Speed")
-        ax3.grid(True, alpha=0.3)
-        fig2.tight_layout()
-        layout.addWidget(canvas2)
-        return card
-
-    @staticmethod
-    def _create_hourly_card(weather: DailyWeather) -> QFrame:
+    def _create_hourly_card(weather) -> QFrame:
         """Create the hourly forecast card."""
         card = QFrame()
         card.setProperty("class", "weather-card")
@@ -337,7 +199,6 @@ class TodayWeatherWidget(QWidget):
         item.setProperty("class", "info-card")
         item.setMinimumWidth(100)
         item.setMaximumWidth(120)
-
         # Time
         time_label = QLabel(row["date"].strftime("%H:%M"))
         time_label.setProperty("class", "info-label")
@@ -386,4 +247,4 @@ class TodayWeatherWidget(QWidget):
         Args:
             use_pyqtgraph: If True, use pyqtgraph; otherwise use matplotlib
         """
-        self.use_pyqtgraph = use_pyqtgraph
+        self.chart_factory.set_backend(use_pyqtgraph)
