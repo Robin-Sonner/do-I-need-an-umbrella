@@ -3,18 +3,24 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
 import os
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(".."))
+
+# Create directories when needed
+docs_dir = Path(__file__).parent
+(docs_dir / '_static').mkdir(exist_ok=True)
+(docs_dir / '_templates').mkdir(exist_ok=True)
+
+# -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "dinau"
 copyright = "2026, Robin Sonner"
 author = "Robin Sonner"
-release = "0.1.0"
+release = "0.4.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
