@@ -21,8 +21,13 @@ instead of the invalid location only being noticed later.
 
 ### Fixed
 
+- Fixed legend of the temperature and precipitation chart being invisible
 - Added missing seperator in WeatherClient.get_weather_forecast. Missing seperator led to corrupted requests to the open meteo API, preventing the forecast from being retrieved.
 - Console is now hidden in the executable
+
+### Note
+- The API of the dinau package hasn't changed, so a major release isn't strictly needed. 
+But with how much the App has changed and considering the jump from beta to stable, i consider a major release to be appropiate.
 
 ### [0.1.3] - 2026-02-12
 

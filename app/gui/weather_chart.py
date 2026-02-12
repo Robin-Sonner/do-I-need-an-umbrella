@@ -167,7 +167,7 @@ class WeatherChart:
         color2: str,
     ) -> PlotWidget:
         """
-        Create temperature/precipitation chart using PyQtGraph.
+        Create a temperature/precipitation chart using PyQtGraph.
 
         Args:
             data: DataFrame with weather data
@@ -196,6 +196,7 @@ class WeatherChart:
         widget.setTitle(title)
         widget.setLabel("left", "Temperature", units="°C", color=color1)
         widget.setLabel("bottom", "Time Period" if x_labels else "Hour")
+        legend = widget.addLegend(offset=(45, 10))
 
         # Set x-axis labels if provided
         if x_labels:
@@ -220,7 +221,9 @@ class WeatherChart:
             int((precip_nice_max - precip_nice_min) / precip_interval) + 1
         )
         # Extend the axis with fewer ticks to match the one with more ticks
-        target_num_ticks = max(temp_num_ticks, precip_num_ticks)
+        target_num_ticks = (
+            max(temp_num_ticks, precip_num_ticks) + 1
+        )  # one more tick to give the legend some space
         temp_nice_max = temp_nice_min + temp_interval * (target_num_ticks - 1)
         precip_nice_max = precip_nice_min + precip_interval * (target_num_ticks - 1)
 
@@ -244,16 +247,30 @@ class WeatherChart:
             width=width,
             brush="#3498db80",
             pen=pg.mkPen("#3498db", width=1),
+            name="Precipitation",
         )
         precip_viewbox.addItem(bar_graph)
         precip_viewbox.setYRange(precip_nice_min, precip_nice_max)
+
+        legend.setParentItem(widget.getPlotItem())
+
+        # Create a sample bar (single scatter plot item) for precipitation in the legend
+        precip_sample = pg.ScatterPlotItem(
+            [0],
+            [0],
+            symbol="s",
+            size=10,
+            brush="#3498db80",
+            pen=pg.mkPen("#3498db", width=1),
+        )
+        legend.addItem(precip_sample, "Precipitation")
 
         return widget
 
     @staticmethod
     def _create_wind_pyqtgraph(wind_data: np.ndarray, x_data: list[int]) -> PlotWidget:
         """
-        Create wind speed chart using PyQtGraph.
+        Create a wind speed chart using PyQtGraph.
 
         Args:
             wind_data: Array of wind speed values in km/h
@@ -460,6 +477,11 @@ class WeatherChart:
                 precip_nice_min, precip_nice_max + precip_interval / 2, precip_interval
             )
         )
+
+        # Add combined legend from both axes
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
 
         ax1.set_title(title)
         fig.tight_layout()
