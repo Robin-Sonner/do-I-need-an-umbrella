@@ -185,7 +185,7 @@ jobs:
           python -m venv venv
           .\venv\Scripts\Activate.ps1
           pip install --upgrade pip
-          pip install -e .[gui]
+          pip install .[gui]
           pip install pyinstaller
 
       - name: Build executable

@@ -24,11 +24,17 @@ instead of the invalid location only being noticed later.
 - Added missing seperator in WeatherClient.get_weather_forecast. Missing seperator led to corrupted requests to the open meteo API, preventing the forecast from being retrieved.
 - Console is now hidden in the executable
 
-### [0.1.2] - 2026-02-12
+### [0.1.3] - 2026-02-12
 
 ### Changed
 
 - Test Release through Jenkins. Console is now hidden in the executable
+
+### [0.1.2] - 2026-02-12
+
+### Changed
+
+- Test Release through GitHub Actions (0.1.1 failed)
 
 ### [0.1.1] - 2026-02-12
 
