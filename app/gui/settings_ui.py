@@ -1,3 +1,5 @@
+"""Widget and Manager for the application settings."""
+
 import configparser
 from pathlib import Path
 
@@ -14,6 +16,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from dinau import Location
 
 
 class ConfigManager:
@@ -101,7 +105,9 @@ class ConfigManager:
 class SettingsWidget(QWidget):
     """Widget for application settings."""
 
-    settings_saved = pyqtSignal(str, bool)  # location, use_pyqtgraph
+    settings_saved = pyqtSignal(
+        str, bool, object
+    )  # location, use_pyqtgraph, location_obj
 
     def __init__(
         self, parent=None, location: str = "Freiburg", use_pyqtgraph: bool = True
@@ -225,15 +231,37 @@ class SettingsWidget(QWidget):
         return card
 
     def _on_save_clicked(self):
-        """Handle save button click by emitting a signal with the updated settings."""
+        """Handle save button click by validating and emitting a signal with the updated settings."""
         location = self.location_input.text().strip()
         if not location:
             QMessageBox.critical(
                 self, "Location Empty", "Please enter a valid location."
             )
             return
+
+        # Validate that the location exists and by creating a Location object
+        try:
+            location_obj = Location(location)
+        except ValueError:
+            QMessageBox.critical(
+                self,
+                "Invalid Location",
+                f"The location '{location}' could not be found.\n\n"
+                "Maybe there's a different name you could try? Also check for typos.",
+            )
+            return
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error Validating Location",
+                f"An error occurred while validating the location:\n{str(e)}\n\n"
+                "Please check your internet connection and try again.",
+            )
+            return
+
         use_pyqtgraph = self.pyqtgraph_radio.isChecked()
-        self.settings_saved.emit(location, use_pyqtgraph)
+        # We can emit the Location for later use by the MainWindow
+        self.settings_saved.emit(location, use_pyqtgraph, location_obj)
 
     def update_settings(self, location: str, use_pyqtgraph: bool):
         """

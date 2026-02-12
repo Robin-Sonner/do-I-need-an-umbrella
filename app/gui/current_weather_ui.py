@@ -22,6 +22,12 @@ class CurrentWeatherWidget(QWidget):
     """Widget to display current weather conditions."""
 
     def __init__(self, parent=None):
+        """
+        Initialize the widget.
+
+        Args:
+            parent: Parent widget (optional)
+        """
         super().__init__(parent)
         self._setup_ui()
 
@@ -78,7 +84,15 @@ class CurrentWeatherWidget(QWidget):
 
     @staticmethod
     def _create_main_card(weather: CurrentWeather) -> QFrame:
-        """Create the main weather display card."""
+        """
+        Create the main weather display card.
+
+        Args:
+            weather: Current weather data
+
+        Returns:
+            QFrame containing the most essential weather information
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         card.setMinimumHeight(200)
@@ -125,7 +139,15 @@ class CurrentWeatherWidget(QWidget):
 
     @staticmethod
     def _create_details_card(weather: CurrentWeather) -> QFrame:
-        """Create the weather details card."""
+        """
+        Create the weather details card.
+
+        Args:
+            weather: Current weather data
+
+        Returns:
+            QFrame containing a grid of weather details
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         layout = QVBoxLayout(card)
@@ -142,13 +164,13 @@ class CurrentWeatherWidget(QWidget):
         grid.setSpacing(20)
         details = [
             ("Humidity", f"{weather.humidity:.0f}%", 0, 0),
-            ("Wind Speed", f"{weather.wind_speed:.1f} km/h", 0, 1),
-            ("Precipitation", f"{weather.precipitation:.1f} mm", 1, 0),
+            ("Precipitation", f"{weather.precipitation:.1f} mm", 0, 1),
+            ("Wind Speed", f"{weather.wind_speed:.1f} km/h", 1, 0),
             ("Wind Direction", f"{weather.wind_direction:.0f}°", 1, 1),
             ("Wind Gust", f"{weather.wind_gust:.1f} km/h", 2, 0),
             ("Cloud Cover", f"{weather.cloud_cover:.0f}%", 2, 1),
-            ("Pressure (Sea)", f"{weather.pressure_sea_level:.0f} hPa", 3, 0),
-            ("Pressure (Surface)", f"{weather.pressure_surface_level:.0f} hPa", 3, 1),
+            ("Pressure (Surface)", f"{weather.pressure_surface_level:.0f} hPa", 3, 0),
+            ("Pressure (Sea)", f"{weather.pressure_sea_level:.0f} hPa", 3, 1),
         ]
         # Show additional precipitation types if relevant
         if weather.rain > 0:
@@ -167,7 +189,16 @@ class CurrentWeatherWidget(QWidget):
 
     @staticmethod
     def _create_info_card(label: str, value: str) -> QFrame:
-        """Create a small info card for a weather detail."""
+        """
+        Create a small info card for a weather detail.
+
+        Args:
+            label: Name of the information
+            value: Value of the information
+
+        Returns:
+            QFrame containing the info card
+        """
         card = QFrame()
         card.setProperty("class", "info-card")
         card.setMinimumHeight(70)

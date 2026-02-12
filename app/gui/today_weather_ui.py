@@ -1,3 +1,5 @@
+"""Widget for displaying today's weather conditions."""
+
 import pandas as pd
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -12,15 +14,22 @@ from PyQt6.QtWidgets import (
 from dinau import DailyWeather
 
 from .utilities import get_weather_emoji
-from .weather_charts import WeatherCharts
+from .weather_chart import WeatherChart
 
 
 class TodayWeatherWidget(QWidget):
     """Widget to display today's weather conditions."""
 
     def __init__(self, parent=None, use_pyqtgraph=True):
+        """
+        Initialize the widget.
+
+        Args:
+            parent: Parent widget (optional)
+            use_pyqtgraph: If True, use pyqtgraph for charting; otherwise matplotlib
+        """
         super().__init__(parent)
-        self.chart_factory = WeatherCharts(use_pyqtgraph=use_pyqtgraph)
+        self.weather_chart = WeatherChart(use_pyqtgraph=use_pyqtgraph)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -72,6 +81,7 @@ class TodayWeatherWidget(QWidget):
         if weather.umbrella_needed():
             umbrella_card = TodayWeatherWidget._create_umbrella_card()
             self.content_layout.addWidget(umbrella_card)
+        # Charts card
         charts_card = self._create_charts_card(weather.hourly_data)
         self.content_layout.addWidget(charts_card)
         # Hourly forecast
@@ -82,7 +92,15 @@ class TodayWeatherWidget(QWidget):
 
     @staticmethod
     def _create_overview_card(weather: DailyWeather) -> QFrame:
-        """Create the overview card with a daily summary."""
+        """
+        Create the overview card with a daily summary.
+
+        Args:
+            weather: Today's weather data
+
+        Returns:
+            QFrame representing the summary
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         layout = QVBoxLayout(card)
@@ -111,7 +129,12 @@ class TodayWeatherWidget(QWidget):
 
     @staticmethod
     def _create_umbrella_card() -> QFrame:
-        """Create a card recommending to bring an umbrella."""
+        """
+        Create a card recommending to bring an umbrella.
+
+        Returns:
+            QFrame representing the umbrella recommendation
+        """
         card = QFrame()
         card.setStyleSheet(
             "background-color: #ebf8ff; border: 2px solid #4299e1; border-radius: 8px;"
@@ -147,20 +170,28 @@ class TodayWeatherWidget(QWidget):
         title.setProperty("class", "subtitle")
         layout.addWidget(title)
         # Temperature and Precipitation Chart
-        temp_precip_chart = self.chart_factory.create_temperature_precipitation_chart(
+        temp_precip_chart = self.weather_chart.create_temperature_precipitation_chart(
             hourly_data
         )
         temp_precip_chart.setMinimumHeight(300)
         layout.addWidget(temp_precip_chart)
         # Wind Speed Chart
-        wind_chart = self.chart_factory.create_wind_speed_chart(hourly_data)
+        wind_chart = self.weather_chart.create_wind_speed_chart(hourly_data)
         wind_chart.setMinimumHeight(250)
         layout.addWidget(wind_chart)
         return card
 
     @staticmethod
-    def _create_hourly_card(weather) -> QFrame:
-        """Create the hourly forecast card."""
+    def _create_hourly_card(weather: DailyWeather) -> QFrame:
+        """
+        Create the hourly forecast card.
+
+        Args:
+            weather: Weather data for today
+
+        Returns:
+            QFrame containing a representation of the hourly forecast
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         layout = QVBoxLayout(card)
@@ -193,25 +224,30 @@ class TodayWeatherWidget(QWidget):
         return card
 
     @staticmethod
-    def _create_hourly_item(row) -> QFrame:
-        """Create a single hourly forecast item."""
+    def _create_hourly_item(row: pd.Series) -> QFrame:
+        """
+        Helper function to create a single hourly forecast item.
+
+        Args:
+            row: Series containing the weather data for a single hour
+
+        Returns:
+            Q-Frame containing a representation of the forecast for this hour
+        """
         item = QFrame()
         item.setProperty("class", "info-card")
         item.setMinimumWidth(100)
         item.setMaximumWidth(120)
-        # Time
+
+        # Data
         time_label = QLabel(row["date"].strftime("%H:%M"))
         time_label.setProperty("class", "info-label")
-        # Weather emoji
         emoji = QLabel(get_weather_emoji(int(row["weather_code"])))
         emoji.setStyleSheet("font-size: 28px;")
-        # Temperature
         temp = QLabel(f"{row['temperature']:.1f}°C")
         temp.setStyleSheet("font-size: 16px; font-weight: 600; color: #2d3748;")
-        # Precipitation
         precip = QLabel(f"💧 {row['precipitation']:.1f}mm")
         precip.setStyleSheet("font-size: 11px; color: #4299e1;")
-        # Wind speed
         wind = QLabel(f"🌬️ {row['wind_speed']:.0f}km/h")
         wind.setStyleSheet("font-size: 11px; color: #718096;")
 
@@ -247,4 +283,4 @@ class TodayWeatherWidget(QWidget):
         Args:
             use_pyqtgraph: If True, use pyqtgraph; otherwise use matplotlib
         """
-        self.chart_factory.set_backend(use_pyqtgraph)
+        self.weather_chart.set_backend(use_pyqtgraph)

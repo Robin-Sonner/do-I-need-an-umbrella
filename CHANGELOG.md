@@ -5,10 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Unreleased
+### [1.0.0] - 2026-02-12
+
+### Added
+
+- Mode Selector in the WeatherForecastTab allowing switching between different temperature data
+- Added App Icon
 
 ### Changed
-- prettier charts in the today's weather tab
+
+- Improved Documentation of the dinau package
+- If the Location is changed in the SettingsUI, the change is validated there. If invalid, this leads to an early failure,
+instead of the invalid location only being noticed later.
+- Detailed Weather Information in the CurrentWeatherTab is sorted better
+
+### Fixed
+
+- Added missing seperator in WeatherClient.get_weather_forecast. Missing seperator led to corrupted requests to the open meteo API, preventing the forecast from being retrieved.
+- Console is now hidden in the executable
+
+### [0.1.2] - 2026-02-12
+
+### Changed
+
+- Test Release through Jenkins. Console is now hidden in the executable
+
+### [0.1.1] - 2026-02-12
+
+### Changed
+
+- Test Release through GitHub Actions. Console is now hidden in the executable
 
 
 ### [0.1.0] - 2026-02-08

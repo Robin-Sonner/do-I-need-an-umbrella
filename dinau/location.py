@@ -13,11 +13,13 @@ class Location:
         self._fetch_coordinates()
 
     @property
-    def latitude(self):
+    def latitude(self) -> float:
+        """Latitude of the location"""
         return self._latitude
 
     @property
-    def longitude(self):
+    def longitude(self) -> float:
+        """Longitude of the location"""
         return self._longitude
 
     def _fetch_coordinates(self) -> None:

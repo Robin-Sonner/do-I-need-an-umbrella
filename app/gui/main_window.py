@@ -17,8 +17,8 @@ from dinau import Location, WeatherClient
 from .current_weather_ui import CurrentWeatherWidget
 from .forecast_weather_ui import ForecastWeatherWidget
 from .settings_ui import ConfigManager, SettingsWidget
+from .stylesheet import STYLESHEET
 from .today_weather_ui import TodayWeatherWidget
-from .utilities import STYLESHEET
 
 
 class WeatherWorker(QThread):
@@ -30,18 +30,19 @@ class WeatherWorker(QThread):
     error_occurred = pyqtSignal(str)
     finished = pyqtSignal()
 
-    def __init__(self, location_name: str, lite: bool = False):
+    def __init__(self, location: Location | str, lite: bool = False):
         super().__init__()
-        self.location_name = location_name
+        self.location = location
         self.lite = lite
         self._is_running = True
 
     def run(self):
         """Fetch the weather data in a background thread (Avoid application freezing)"""
         try:
-            # Create the location and weather client
-            location = Location(self.location_name)
-            client = WeatherClient(location)
+            if isinstance(self.location, str):
+                self.location = Location(self.location)
+            # Create the weather client
+            client = WeatherClient(self.location)
             if not self._is_running:
                 return
             # Fetch current weather
@@ -75,13 +76,14 @@ class MainWindow(QMainWindow):
         self.config_manager = ConfigManager()
         self.location_name = self.config_manager.get_location()
         self.use_pyqtgraph = self.config_manager.get_use_pyqtgraph()
+        self.location = None
         self.worker = None
         self._setup_ui()
 
         # Show the Settings tab if the config is invalid (or missing), else load weather data
         if not self.config_manager.config_exists():
             self.tab_widget.setCurrentIndex(3)  # Settings tab
-            self._disable_weather_tabs()
+            self._toggle_weather_tabs(False)
         else:
             self._load_weather_data()
 
@@ -151,7 +153,8 @@ class MainWindow(QMainWindow):
         self.refresh_button.setEnabled(False)
         self.refresh_button.setText("Loading...")
         # Create and start the worker
-        self.worker = WeatherWorker(self.location_name)
+        location = self.location if self.location else self.location_name
+        self.worker = WeatherWorker(location)
         self.worker.current_weather_ready.connect(self._on_current_weather_ready)
         self.worker.today_weather_ready.connect(self._on_today_weather_ready)
         self.worker.forecast_weather_ready.connect(self._on_forecast_weather_ready)
@@ -176,7 +179,7 @@ class MainWindow(QMainWindow):
         QMessageBox.critical(
             self,
             "Error Loading Weather Data",
-            f"Failed to load weather data:\n{error_message}\n.Please check your internet connection and try again.",
+            f"Failed to load weather data:\n{error_message}\n\nPlease check your internet connection and try again.",
         )
 
     def _on_loading_finished(self):
@@ -184,22 +187,27 @@ class MainWindow(QMainWindow):
         self.refresh_button.setEnabled(True)
         self.refresh_button.setText("Refresh")
 
-    def _on_settings_saved(self, location: str, use_pyqtgraph: bool):
+    def _on_settings_saved(
+        self, location: str, use_pyqtgraph: bool, location_obj: Location
+    ):
         """
         Handle settings saved event.
 
         Args:
             location: New location name
             use_pyqtgraph: Chart library preference
+            location_obj: Validated Location object
         """
         # Save to the config file
         self.config_manager.save_settings(location, use_pyqtgraph)
         # Update internal state
-        self.location_name = location
         self.use_pyqtgraph = use_pyqtgraph
+        self.location_name = location
+        self.location = location_obj  # Reuse the validated Location object
         self.location_label.setText(location)
         self.today_weather_widget.set_chart_backend(use_pyqtgraph)
-        self._enable_weather_tabs()
+        self.forecast_weather_widget.set_chart_backend(use_pyqtgraph)
+        self._toggle_weather_tabs(True)
         self._load_weather_data()
         self.tab_widget.setCurrentIndex(0)
         # Show a confirmation message
@@ -209,29 +217,11 @@ class MainWindow(QMainWindow):
             f"Settings saved successfully!\nLocation: {location}.\nChart Library: {'PyQtGraph' if use_pyqtgraph else 'Matplotlib'}",
         )
 
-    def _disable_weather_tabs(self):
-        """Disable weather-related tabs until settings are configured."""
-        self.tab_widget.setTabEnabled(0, False)  # Current Weather
-        self.tab_widget.setTabEnabled(1, False)  # Today's Forecast
-        self.tab_widget.setTabEnabled(2, False)  # 7-Day Forecast
-
-    def _enable_weather_tabs(self):
-        """Enable all weather-related tabs."""
-        self.tab_widget.setTabEnabled(0, True)  # Current Weather
-        self.tab_widget.setTabEnabled(1, True)  # Today's Forecast
-        self.tab_widget.setTabEnabled(2, True)  # 7-Day Forecast
-
-    def set_chart_backend(self, use_pyqtgraph: bool):
-        """
-        Set the chart backend for weather displays.
-
-        Args:
-            use_pyqtgraph: If True, use pyqtgraph; otherwise use matplotlib
-        """
-        self.use_pyqtgraph = use_pyqtgraph
-        self.today_weather_widget.set_chart_backend(use_pyqtgraph)
-        self.forecast_weather_widget.set_chart_backend(use_pyqtgraph)
-        self._load_weather_data()  # Reload data to refresh charts
+    def _toggle_weather_tabs(self, enable: bool):
+        """Enable/Disable weather-related tabs"""
+        self.tab_widget.setTabEnabled(0, enable)  # Current Weather
+        self.tab_widget.setTabEnabled(1, enable)  # Today's Forecast
+        self.tab_widget.setTabEnabled(2, enable)  # 7-Day Forecast
 
     def closeEvent(self, event):
         """Handle window close event."""

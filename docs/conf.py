@@ -20,7 +20,7 @@ docs_dir = Path(__file__).parent
 project = "dinau"
 copyright = "2026, Robin Sonner"
 author = "Robin Sonner"
-release = "0.4.0"
+release = "0.1.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

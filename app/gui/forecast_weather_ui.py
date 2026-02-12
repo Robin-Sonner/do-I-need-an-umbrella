@@ -1,10 +1,12 @@
-"""Widget for displaying 7-day weather forecast."""
+"""Widget for displaying a 7-day weather forecast."""
 
-import pyqtgraph as pg
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+from enum import Enum
+from typing import Optional
+
+import pandas as pd
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
+    QComboBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -13,21 +15,35 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from pyqtgraph import PlotWidget
 
 from dinau import WeatherForecast
 
 from .utilities import WEATHER_DESCRIPTION, get_weather_emoji
+from .weather_chart import WeatherChart
+
+
+class DisplayMode(Enum):
+    """Display modes for temperature charts."""
+
+    MIN_MAX = "Min/Max Temperature"
+    REAL_APPARENT = "Real/Apparent Temperature"
 
 
 class ForecastWeatherWidget(QWidget):
     """Widget to display 7-day weather forecast."""
 
     def __init__(self, parent=None, use_pyqtgraph=True):
+        """
+        Initialize the widget.
+
+        Args:
+            parent: Parent widget (optional)
+            use_pyqtgraph: If True, use pyqtgraph for charting; otherwise matplotlib
+        """
         super().__init__(parent)
-        self.use_pyqtgraph = use_pyqtgraph
-        if self.use_pyqtgraph:
-            pg.setConfigOptions(antialias=True)
+        self.current_mode = DisplayMode.MIN_MAX
+        self.weather_chart = WeatherChart(use_pyqtgraph)
+        self.current_weather: Optional[WeatherForecast] = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -64,6 +80,88 @@ class ForecastWeatherWidget(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
+    def _create_mode_selector(self) -> QFrame:
+        """
+        Create a mode selector widget for chart display modes.
+
+        Returns:
+            QFrame containing the mode selector
+        """
+        card = QFrame()
+        card.setProperty("class", "weather-card")
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(20, 15, 20, 15)
+        layout.setSpacing(15)
+
+        label = QLabel("Chart Display Mode:")
+        label.setProperty("class", "subtitle")
+        layout.addWidget(label)
+        # Combo box for display modes
+        self.mode_combo = QComboBox()
+        for mode in DisplayMode:
+            self.mode_combo.addItem(mode.value, mode)
+        # Set the index according to the current mode
+        index = self.mode_combo.findData(self.current_mode)
+        self.mode_combo.setCurrentIndex(index)
+        self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
+        self.mode_combo.setMinimumWidth(300)
+        layout.addWidget(self.mode_combo)
+
+        layout.addStretch()
+        return card
+
+    def _on_mode_changed(self, index: int):
+        """
+        Handle mode selection change.
+
+        Args:
+            index: Index of the selected mode
+        """
+        self.current_mode = self.mode_combo.itemData(index)
+        if self.current_weather:
+            # Reuse the update function to refresh the charts
+            self.update_weather(self.current_weather)
+
+    def _prepare_daily_chart_data(self, weather: WeatherForecast) -> dict:
+        """
+        Prepare daily data for charting based on the current display mode.
+
+        Args:
+            weather: Weather forecast data
+
+        Returns:
+            Dictionary with chart configuration
+        """
+        df = weather.daily_data
+        x_labels = [(i, df.iloc[i]["date"].strftime("%a %d")) for i in range(len(df))]
+
+        if self.current_mode == DisplayMode.MIN_MAX:
+            return {
+                "data": df,
+                "temp1_col": "temperature_min",
+                "temp2_col": "temperature_max",
+                "precip_col": "precipitation_sum",
+                "x_labels": x_labels,
+                "title": "Min/Max Temperature & Precipitation",
+                "label1": "Min Temp",
+                "label2": "Max Temp",
+                "color1": "#3498db",
+                "color2": "#e74c3c",
+            }
+        else:  # REAL_APPARENT
+            return {
+                "data": df,
+                "temp1_col": "temperature_mean",
+                "temp2_col": "apparent_temperature_mean",
+                "precip_col": "precipitation_sum",
+                "x_labels": x_labels,
+                "title": "Real/Apparent Temperature & Precipitation",
+                "label1": "Temperature",
+                "label2": "Feels Like",
+                "color1": "#e74c3c",
+                "color2": "#ff9800",
+            }
+
     def update_weather(self, weather: WeatherForecast):
         """
         Update the display with new weather data.
@@ -71,6 +169,7 @@ class ForecastWeatherWidget(QWidget):
         Args:
             weather: 7-day weather forecast data
         """
+        self.current_weather = weather
         self._clear_layout()
         # Overview card with weekly summary
         overview_card = self._create_overview_card(weather)
@@ -78,31 +177,57 @@ class ForecastWeatherWidget(QWidget):
         # Umbrella recommendations
         umbrella_days = weather.umbrella_needed()
         if any(umbrella_days):
-            umbrella_card = self._create_umbrella_recommendation_card(
-                weather, umbrella_days
-            )
+            umbrella_card = self._create_umbrella_recommendation_card(umbrella_days)
             self.content_layout.addWidget(umbrella_card)
         # Daily forecast cards
-        daily_cards = self._create_daily_forecast_cards(weather, umbrella_days)
+        daily_cards = self._create_daily_forecast_cards(weather)
         self.content_layout.addWidget(daily_cards)
-        # Temperature trend chart
-        if self.use_pyqtgraph:
-            temp_chart = self._create_pyqtgraph_temperature_chart(weather)
-        else:
-            temp_chart = self._create_matplotlib_temperature_chart(weather)
-        self.content_layout.addWidget(temp_chart)
-        # Precipitation chart
-        if self.use_pyqtgraph:
-            precip_chart = self._create_pyqtgraph_precipitation_chart(weather)
-        else:
-            precip_chart = self._create_matplotlib_precipitation_chart(weather)
-        self.content_layout.addWidget(precip_chart)
+        # Temperature chart with current mode
+        chart_config = self._prepare_daily_chart_data(weather)
+        temp_chart_frame = self._create_chart_card(chart_config)
+        self.content_layout.addWidget(temp_chart_frame)
+        # Mode selector
+        mode_selector = self._create_mode_selector()
+        self.content_layout.addWidget(mode_selector)
         # Add stretch to push content to the top
         self.content_layout.addStretch()
 
+    def _create_chart_card(self, config: dict) -> QFrame:
+        """
+        Create a chart card using the WeatherChart factory.
+
+        Args:
+            config: Chart configuration dictionary
+
+        Returns:
+            QFrame containing the chart
+        """
+        card = QFrame()
+        card.setProperty("class", "weather-card")
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(20)
+        # Title
+        title = QLabel(self.current_mode.value)
+        title.setProperty("class", "subtitle")
+        layout.addWidget(title)
+        # Create charts
+        chart = self.weather_chart.create_temperature_precipitation_chart(**config)
+        chart.setMinimumHeight(350)
+        layout.addWidget(chart)
+        return card
+
     @staticmethod
     def _create_overview_card(weather: WeatherForecast) -> QFrame:
-        """Create the overview card with a weekly summary."""
+        """
+        Create the overview card with a weekly summary.
+
+        Args:
+            weather: 7-day weather forecast data
+
+        Returns:
+            QFrame containing the summary
+        """
         card = QFrame()
         card.setProperty("class", "weather-card")
         layout = QVBoxLayout(card)
@@ -129,10 +254,16 @@ class ForecastWeatherWidget(QWidget):
         return card
 
     @staticmethod
-    def _create_umbrella_recommendation_card(
-        weather: WeatherForecast, umbrella_days: list[bool]
-    ) -> QFrame:
-        """Create a card with umbrella recommendations for specific days."""
+    def _create_umbrella_recommendation_card(umbrella_days: list[bool]) -> QFrame:
+        """
+        Create a card with umbrella recommendations for specific days.
+
+        Args:
+            umbrella_days: List of booleans indicating whether an umbrella is needed for each day
+
+        Returns:
+            QFrame containing the recommendation
+        """
         card = QFrame()
         card.setStyleSheet(
             "background-color: #ebf8ff; border: 2px solid #4299e1; border-radius: 8px;"
@@ -155,10 +286,16 @@ class ForecastWeatherWidget(QWidget):
         return card
 
     @staticmethod
-    def _create_daily_forecast_cards(
-        weather: WeatherForecast, umbrella_days: list[bool]
-    ) -> QFrame:
-        """Create individual cards for each day of the forecast."""
+    def _create_daily_forecast_cards(weather: WeatherForecast) -> QFrame:
+        """
+        Create individual cards for each day of the forecast.
+
+        Args:
+            weather: 7-day weather forecast data
+
+        Returns:
+            QFrame containing the weather information for each day
+        """
         container = QFrame()
         container.setProperty("class", "weather-card")
         layout = QVBoxLayout(container)
@@ -173,9 +310,9 @@ class ForecastWeatherWidget(QWidget):
         grid = QGridLayout()
         grid.setSpacing(15)
         df = weather.daily_data
+
         for i in range(len(df)):
             row_data = df.iloc[i]
-            needs_umbrella = umbrella_days[i]
             # Get the most common weather code for this day
             day_date = row_data["date"].date()
             hourly_day_data = weather.hourly_data[
@@ -186,7 +323,7 @@ class ForecastWeatherWidget(QWidget):
             else:
                 weather_code = 0
             day_card = ForecastWeatherWidget._create_single_day_card(
-                row_data, weather_code, needs_umbrella
+                row_data, weather_code
             )
             # Arrange in grid: 4 columns for a wider layout
             row = i // 4
@@ -196,10 +333,17 @@ class ForecastWeatherWidget(QWidget):
         return container
 
     @staticmethod
-    def _create_single_day_card(
-        row_data, weather_code: int, needs_umbrella: bool
-    ) -> QFrame:
-        """Create a card for a single day's forecast."""
+    def _create_single_day_card(row_data: pd.Series, weather_code: int) -> QFrame:
+        """
+        Create a card for a single day's forecast.
+
+        Args:
+            row_data: Series containing the weather data for a single day
+            weather_code: Weather code for the day
+
+        Returns:
+            QFrame containing the forecast information for this day
+        """
         card = QFrame()
         card.setProperty("class", "info-card")
         card.setMinimumHeight(180)
@@ -216,7 +360,7 @@ class ForecastWeatherWidget(QWidget):
         layout.addWidget(day_label)
         # Date
         date_label = QLabel(date.strftime("%b %d"))
-        date_label.setStyleSheet("font-size: 12px; color: #718096;")
+        date_label.setProperty("class", "info-label")
         date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(date_label)
         # Weather emoji
@@ -231,230 +375,20 @@ class ForecastWeatherWidget(QWidget):
         desc.setWordWrap(True)
         layout.addWidget(desc)
         # Temperature range
-        temp_range = QLabel(
-            f"{row_data['temperature_min']:.0f}° - {row_data['temperature_max']:.0f}°C"
-        )
-        temp_range.setStyleSheet(
-            "font-size: 16px; font-weight: 600; color: #2d3748; margin-top: 5px;"
-        )
-        temp_range.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(temp_range)
-        # Precipitation probability
-        precip = QLabel(f"💧 {row_data['precipitation_probability']:.0f}%")
-        precip.setStyleSheet("font-size: 12px; color: #4299e1;")
-        precip.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(precip)
-        # Umbrella indicator
-        if needs_umbrella:
-            umbrella = QLabel("☔ Umbrella needed")
-            umbrella.setStyleSheet(
-                "font-size: 11px; color: #e53e3e; font-weight: 600; margin-top: 3px;"
-            )
-            umbrella.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(umbrella)
+        temp_min = row_data["temperature_min"]
+        temp_max = row_data["temperature_max"]
+        temp_label = QLabel(f"{temp_min:.0f}° - {temp_max:.0f}°")
+        temp_label.setProperty("class", "temperature-range")
+        temp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(temp_label)
+        # Precipitation
+        precip = row_data["precipitation_sum"]
+        precip_label = QLabel(f"💧 {precip:.0f}mm")
+        precip_label.setStyleSheet("font-size: 14px; color: #4a5568;")
+        precip_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(precip_label)
 
         layout.addStretch()
-        return card
-
-    @staticmethod
-    def _create_pyqtgraph_temperature_chart(weather: WeatherForecast) -> QFrame:
-        """Create temperature trend chart using pyqtgraph."""
-        card = QFrame()
-        card.setProperty("class", "weather-card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
-        # Title
-        title = QLabel("Temperature Trend")
-        title.setProperty("class", "subtitle")
-        layout.addWidget(title)
-        # Chart
-        chart_widget = PlotWidget()
-        chart_widget.setBackground("w")
-        chart_widget.setMinimumHeight(300)
-        chart_widget.showGrid(x=True, y=True, alpha=0.3)
-        chart_widget.setLabel("left", "Temperature", units="°C")
-        chart_widget.setLabel("bottom", "Day")
-        chart_widget.setTitle("Daily Temperature Range")
-        chart_widget.setMouseEnabled(x=False, y=False)
-        chart_widget.setMenuEnabled(False)
-        df = weather.daily_data
-        days = list(range(len(df)))
-        # Min temperature line
-        min_pen = pg.mkPen(color="#3498db", width=3, style=Qt.PenStyle.DashLine)
-        chart_widget.plot(
-            days,
-            df["temperature_min"].values,
-            pen=min_pen,
-            name="Min Temp",
-            symbol="o",
-            symbolSize=8,
-            symbolBrush="#3498db",
-        )
-        # Max temperature line
-        max_pen = pg.mkPen(color="#e74c3c", width=3)
-        chart_widget.plot(
-            days,
-            df["temperature_max"].values,
-            pen=max_pen,
-            name="Max Temp",
-            symbol="o",
-            symbolSize=8,
-            symbolBrush="#e74c3c",
-        )
-        # Fill between min and max
-        fill = pg.FillBetweenItem(
-            chart_widget.plot(days, df["temperature_min"].values, pen=None),
-            chart_widget.plot(days, df["temperature_max"].values, pen=None),
-            brush=pg.mkBrush(color=(231, 76, 60, 50)),
-        )
-        chart_widget.addItem(fill)
-        # Set x-axis labels to day names
-        x_ticks = [(i, df.iloc[i]["date"].strftime("%a %d")) for i in range(len(df))]
-        ax = chart_widget.getAxis("bottom")
-        ax.setTicks([x_ticks])
-        chart_widget.addLegend()
-        layout.addWidget(chart_widget)
-        return card
-
-    @staticmethod
-    def _create_matplotlib_temperature_chart(weather: WeatherForecast) -> QFrame:
-        """Create a temperature trend chart using matplotlib."""
-        card = QFrame()
-        card.setProperty("class", "weather-card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
-        # Title
-        title = QLabel("Temperature Trend")
-        title.setProperty("class", "subtitle")
-        layout.addWidget(title)
-        # Chart
-        fig = Figure(figsize=(10, 4), dpi=100)
-        canvas = FigureCanvasQTAgg(fig)
-        canvas.setMinimumHeight(300)
-        ax = fig.add_subplot(111)
-        df = weather.daily_data
-        days = list(range(len(df)))
-        day_labels = [df.iloc[i]["date"].strftime("%a %d") for i in days]
-        # Plot min and max temperatures
-        ax.plot(
-            days,
-            df["temperature_min"].values,
-            "b--o",
-            linewidth=2,
-            label="Min Temp",
-            markersize=8,
-        )
-        ax.plot(
-            days,
-            df["temperature_max"].values,
-            "r-o",
-            linewidth=2,
-            label="Max Temp",
-            markersize=8,
-        )
-        # Fill between
-        ax.fill_between(
-            days,
-            df["temperature_min"].values,
-            df["temperature_max"].values,
-            alpha=0.2,
-            color="red",
-        )
-        ax.set_xlabel("Day")
-        ax.set_ylabel("Temperature (°C)")
-        ax.set_title("Daily Temperature Range")
-        ax.set_xticks(days)
-        ax.set_xticklabels(day_labels, rotation=0)
-        ax.legend()
-        ax.grid(True, alpha=0.3)
-        fig.tight_layout()
-        layout.addWidget(canvas)
-        return card
-
-    @staticmethod
-    def _create_pyqtgraph_precipitation_chart(weather: WeatherForecast) -> QFrame:
-        """Create precipitation probability chart using pyqtgraph."""
-        card = QFrame()
-        card.setProperty("class", "weather-card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
-        # Title
-        title = QLabel("Precipitation Probability")
-        title.setProperty("class", "subtitle")
-        layout.addWidget(title)
-        # Chart
-        chart_widget = PlotWidget()
-        chart_widget.setBackground("w")
-        chart_widget.setMinimumHeight(250)
-        chart_widget.showGrid(x=True, y=True, alpha=0.3)
-        chart_widget.setLabel("left", "Probability", units="%")
-        chart_widget.setLabel("bottom", "Day")
-        chart_widget.setTitle("Chance of Precipitation")
-        chart_widget.setMouseEnabled(x=False, y=False)
-        chart_widget.setMenuEnabled(False)
-        df = weather.daily_data
-        days = list(range(len(df)))
-        # Bar graph for precipitation probability
-        bar_graph = pg.BarGraphItem(
-            x=days,
-            height=df["precipitation_probability"].values,
-            width=0.6,
-            brush="#3498db80",
-            pen=pg.mkPen("#3498db", width=2),
-        )
-        chart_widget.addItem(bar_graph)
-        # Set y-axis range
-        chart_widget.setYRange(0, 105)
-        # Set x-axis labels
-        x_ticks = [(i, df.iloc[i]["date"].strftime("%a %d")) for i in range(len(df))]
-        ax = chart_widget.getAxis("bottom")
-        ax.setTicks([x_ticks])
-        layout.addWidget(chart_widget)
-        return card
-
-    @staticmethod
-    def _create_matplotlib_precipitation_chart(weather: WeatherForecast) -> QFrame:
-        """Create a precipitation probability chart using matplotlib."""
-        card = QFrame()
-        card.setProperty("class", "weather-card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(30, 30, 30, 30)
-        layout.setSpacing(20)
-        # Title
-        title = QLabel("Precipitation Probability")
-        title.setProperty("class", "subtitle")
-        layout.addWidget(title)
-        # Chart
-        fig = Figure(figsize=(10, 3.5), dpi=100)
-        canvas = FigureCanvasQTAgg(fig)
-        canvas.setMinimumHeight(250)
-        ax = fig.add_subplot(111)
-        df = weather.daily_data
-        days = list(range(len(df)))
-        day_labels = [df.iloc[i]["date"].strftime("%a %d") for i in days]
-        # Bar chart
-        ax.bar(
-            days,
-            df["precipitation_probability"].values,
-            color="#3498db",
-            alpha=0.7,
-            edgecolor="#2980b9",
-            linewidth=2,
-        )
-        ax.set_xlabel("Day")
-        ax.set_ylabel("Probability (%)")
-        ax.set_title("Chance of Precipitation")
-        ax.set_xticks(days)
-        ax.set_xticklabels(day_labels, rotation=0)
-        ax.set_ylim(0, 105)
-        ax.grid(True, alpha=0.3, axis="y")
-
-        fig.tight_layout()
-        layout.addWidget(canvas)
-
         return card
 
     def show_error(self, error_message: str):
@@ -479,4 +413,4 @@ class ForecastWeatherWidget(QWidget):
         Args:
             use_pyqtgraph: If True, use pyqtgraph; otherwise use matplotlib
         """
-        self.use_pyqtgraph = use_pyqtgraph
+        self.weather_chart.set_backend(use_pyqtgraph)

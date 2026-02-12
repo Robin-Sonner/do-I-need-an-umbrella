@@ -20,8 +20,11 @@ from .models import (
 
 
 class WeatherClient:
-    """
-    Client for retrieving weather forecasts from Open-Meteo API.
+    """Client for retrieving weather forecasts from Open-Meteo API.
+
+    This client provides methods to fetch current weather conditions,
+    today's weather forecast, and multi-day weather forecasts with
+    configurable detail levels.
     """
 
     FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
@@ -60,12 +63,14 @@ class WeatherClient:
         rounding_precision: Optional[int] = 2,
         meteo=openmeteo_requests.Client,
     ):
-        """
-        Initialize the Weather Client.
-        Attributes:
-            location: Location to get weather forecasts for
-            rounding_precision: Rounding precision for all numeric values. If None, no rounding is performed.
-            meteo: API to use for retrieving weather forecasts. Can be replaced with a mock for testing purposes.
+        """Initialize the Weather Client.
+
+        :param location: Location to get weather forecasts for
+        :type location: Location
+        :param rounding_precision: Rounding precision for all numeric values. If None, no rounding is performed (default: 2)
+        :type rounding_precision: Optional[int]
+        :param meteo: API to use for retrieving weather forecasts. Can be replaced with a mock for testing purposes (default: openmeteo_requests.Client)
+        :type meteo: class
         """
         self.location = location
         self._rounding_precision = rounding_precision
@@ -77,14 +82,12 @@ class WeatherClient:
     def get_weather_current(
         self, lite: bool = False
     ) -> CurrentWeather | CurrentWeatherLite:
-        """
-        Retrieve the current weather.
+        """Retrieve the current weather conditions.
 
-        Args:
-             lite: If True, returns only the most important weather information, else returns a detailed report.
-
-        Returns:
-            CurrentWeather | CurrentWeatherLite: Dataclass holding information about the current weather.
+        :param lite: If True, returns only the most important weather information; otherwise returns a detailed report (default: False)
+        :type lite: bool
+        :return: Dataclass holding information about the current weather
+        :rtype: ~dinau.models.CurrentWeather | ~dinau.models.CurrentWeatherLite
         """
         now = time.time()
         params = {
@@ -128,14 +131,12 @@ class WeatherClient:
         return weather
 
     def get_weather_today(self, lite: bool = False):
-        """
-        Retrieve the today's weather.
+        """Retrieve today's weather forecast.
 
-        Args:
-             lite: If True, returns only the most important weather information, else returns a detailed report.
-
-        Returns:
-            DailyWeather | DailyWeatherLite: Dataclass holding information about the current weather.
+        :param lite: If True, returns only the most important weather information; otherwise returns a detailed report (default: False)
+        :type lite: bool
+        :return: Dataclass holding information about today's weather
+        :rtype: ~dinau.models.DailyWeather | ~dinau.models.DailyWeatherLite
         """
         now = time.time()
         date = datetime.now().date().strftime("%Y-%m-%d")
@@ -233,7 +234,15 @@ class WeatherClient:
         return weather
 
     def get_weather_forecast(self, days: int = 7, lite: bool = False):
-        """ """
+        """Retrieve weather forecast for multiple days.
+
+        :param days: Number of days to forecast (default: 7)
+        :type days: int
+        :param lite: If True, returns only the most important weather information; otherwise returns a detailed report (default: False)
+        :type lite: bool
+        :return: Dataclass holding weather forecast data
+        :rtype: ~dinau.models.WeatherForecast | ~dinau.models.WeatherForecastLite
+        """
         now = time.time()
         start = datetime.now().date().strftime("%Y-%m-%d")
         end = (datetime.now().date() + timedelta(days=days)).strftime("%Y-%m-%d")
@@ -244,7 +253,8 @@ class WeatherClient:
                 "temperature_2m_min",
                 "temperature_2m_max",
                 "temperature_2m_mean",
-                "apparent_temperature_mean" "precipitation_probability_max",
+                "apparent_temperature_mean",
+                "precipitation_probability_max",
                 "precipitation_sum",
             ],
             "hourly": self.LITE_WEATHER if lite else self.FULL_WEATHER,
@@ -275,7 +285,7 @@ class WeatherClient:
             "temperature_mean": self._get_values(2, daily),
             "apparent_temperature_mean": self._get_values(3, daily),
             "precipitation_probability": self._get_values(4, daily),
-            "precipitation_sum": self._get_values(5, daily)[0],
+            "precipitation_sum": self._get_values(5, daily),
         }
 
         if lite:
@@ -343,21 +353,29 @@ class WeatherClient:
             )
 
     def _get_value(self, key: int, data: Any) -> float:
+        """Get a single value with optional rounding applied.
+
+        :param key: Variable index
+        :type key: int
+        :param data: Data object containing the variables
+        :type data: Any
+        :return: Value, optionally rounded to the configured precision
+        :rtype: float
+        """
         value = data.Variables(key).Value()
         if self._rounding_precision is not None:
             return round(data.Variables(key).Value(), self._rounding_precision)
         return value
 
     def _get_values(self, key: int, data: Any):
-        """
-        Get numpy array values with optional rounding applied.
+        """Get numpy array values with optional rounding applied.
 
-        Args:
-            key: Variable index
-            data: Data object containing the variables
-
-        Returns:
-            numpy array with values, optionally rounded
+        :param key: Variable index
+        :type key: int
+        :param data: Data object containing the variables
+        :type data: Any
+        :return: Numpy array with values, optionally rounded to the configured precision
+        :rtype: numpy.ndarray
         """
         values = data.Variables(key).ValuesAsNumpy()
         if self._rounding_precision is not None:

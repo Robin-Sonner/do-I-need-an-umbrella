@@ -5,7 +5,10 @@ import pandas as pd
 
 
 class AirQualityIndex(Enum):
-    """European Air Quality Index categories."""
+    """European Air Quality Index categories.
+
+    This enum defines the standard European air quality categories ranging from good to extremely poor conditions.
+    """
 
     GOOD = auto()
     FAIR = auto()
@@ -17,25 +20,38 @@ class AirQualityIndex(Enum):
 
 @dataclass
 class CurrentWeather:
-    """
-    Current weather conditions. Comprehensive information
+    """Current weather conditions with comprehensive information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        temperature: Current temperature in Celsius
-        apparent_temperature: Current Feels-like temperature in Celsius
-        humidity: Current Relative humidity (0-100%)
-        wind_speed: Current wind speed in km/h
-        wind_direction: Current Wind direction in degrees
-        wind_gust: Current Wind gust speed in km/h
-        weather_code: Current WMO weather code
-        precipitation: Preceding 15 minutes sum in mm
-        snowfall: Preceding 15 minutes sum in cm
-        rain: Preceding 15 minutes sum in mm
-        showers: Preceding 15 minutes sum in mm
-        cloud_cover: Current Cloud cover percentage (0-100%)
-        pressure_sea_level: Current Atmospheric pressure at sea level in hPa
-        pressure_surface_level Current Atmospheric pressure at surface level in hPa
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param temperature: Current temperature in Celsius
+    :type temperature: float
+    :param apparent_temperature: Current feels-like temperature in Celsius
+    :type apparent_temperature: float
+    :param humidity: Current relative humidity (0-100%)
+    :type humidity: float
+    :param wind_speed: Current wind speed in km/h
+    :type wind_speed: float
+    :param wind_direction: Current wind direction in degrees
+    :type wind_direction: float
+    :param wind_gust: Current wind gust speed in km/h
+    :type wind_gust: float
+    :param weather_code: Current WMO weather code
+    :type weather_code: int
+    :param precipitation: Preceding 15 minutes sum in mm
+    :type precipitation: float
+    :param snowfall: Preceding 15 minutes sum in cm
+    :type snowfall: float
+    :param rain: Preceding 15 minutes sum in mm
+    :type rain: float
+    :param showers: Preceding 15 minutes sum in mm
+    :type showers: float
+    :param cloud_cover: Current cloud cover percentage (0-100%)
+    :type cloud_cover: float
+    :param pressure_sea_level: Current atmospheric pressure at sea level in hPa
+    :type pressure_sea_level: float
+    :param pressure_surface_level: Current atmospheric pressure at surface level in hPa
+    :type pressure_surface_level: float
     """
 
     timestamp: float
@@ -57,17 +73,22 @@ class CurrentWeather:
 
 @dataclass
 class CurrentWeatherLite:
-    """
-    Current weather conditions. Only the most important information.
+    """Current weather conditions with only the most important information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        temperature: Current temperature in Celsius
-        apparent_temperature: Current Feels-like temperature in Celsius
-        humidity: Current Relative humidity (0-100%)
-        wind_speed: Current wind speed in km/h
-        weather_code: Current WMO weather code
-        precipitation: Preceding 15 minutes sum in mm
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param temperature: Current temperature in Celsius
+    :type temperature: float
+    :param apparent_temperature: Current feels-like temperature in Celsius
+    :type apparent_temperature: float
+    :param humidity: Current relative humidity (0-100%)
+    :type humidity: float
+    :param wind_speed: Current wind speed in km/h
+    :type wind_speed: float
+    :param weather_code: Current WMO weather code
+    :type weather_code: int
+    :param precipitation: Preceding 15 minutes sum in mm
+    :type precipitation: float
     """
 
     timestamp: float
@@ -81,27 +102,31 @@ class CurrentWeatherLite:
 
 @dataclass
 class DailyWeatherLite:
-    """
-    Weather forecast for a single day. Only the most important information.
+    """Weather forecast for a single day with only the most important information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        temperature_min: Minimum temperature in Celsius
-        temperature_max: Maximum temperature in Celsius
-        precipitation_probability: Probability of precipitation (0-100%)
-        hourly_data: Hourly weather data for the day
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param temperature_min: Minimum temperature in Celsius
+    :type temperature_min: float
+    :param temperature_max: Maximum temperature in Celsius
+    :type temperature_max: float
+    :param precipitation_probability: Probability of precipitation (0-100%)
+    :type precipitation_probability: float
+    :param hourly_data: Hourly weather data for the day
+    :type hourly_data: pd.DataFrame
 
-    Notes:
-        hourly_data contains the columns:
-        - date: datetime of this row
-        - temperature: Temperature (Celsius)
-        - apparent_temperature: Feels-like temperature
-        - humidity: Relative humidity at this time (0-100%)
-        - wind_speed: Wind speed
-        - weather_code: WMO weather code
-        - precipitation: Precipitation amount (mm)
-        Except for date (datetime) and weather_code (int), all columns contain float values.
-        There are 24 rows in hourly_data.
+    .. note::
+       The ``hourly_data`` DataFrame contains the following columns:
+
+       - **date** (*datetime*): Datetime of this row
+       - **temperature** (*float*): Temperature (Celsius)
+       - **apparent_temperature** (*float*): Feels-like temperature
+       - **humidity** (*float*): Relative humidity at this time (0-100%)
+       - **wind_speed** (*float*): Wind speed
+       - **weather_code** (*int*): WMO weather code
+       - **precipitation** (*float*): Precipitation amount (mm)
+
+       The DataFrame contains 24 rows (one per hour).
     """
 
     timestamp: float
@@ -111,18 +136,17 @@ class DailyWeatherLite:
     hourly_data: pd.DataFrame
 
     def umbrella_needed(self, threshold: float = 3.0) -> bool:
-        """
-        Determines if an umbrella is needed based on the weather data.
+        """Determines if an umbrella is needed based on the weather data.
 
-        Internally, Umbrella points are calculated based on the following factors:
-            - Precipitation probability (0-100%)
-            - Precipitation amount, temperature, and time of precipitation
+        Umbrella points are calculated internally based on the following factors:
 
-        Args:
-            threshold: Minimum number of 'umbrella points' needed to return true
+        - Precipitation probability (0-100%)
+        - Precipitation amount, temperature, and time of precipitation
 
-        Returns:
-            bool: True if an umbrella is needed, else False
+        :param threshold: Minimum number of 'umbrella points' needed to return True (default: 3.0)
+        :type threshold: float
+        :return: True if an umbrella is needed, False otherwise
+        :rtype: bool
         """
         df = self.hourly_data.copy()
 
@@ -154,35 +178,39 @@ class DailyWeatherLite:
 
 @dataclass
 class DailyWeather(DailyWeatherLite):
-    """
-    Weather forecast for a single day. Comprehensive information.
+    """Weather forecast for a single day with comprehensive information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        temperature_min: Minimum temperature in Celsius
-        temperature_max: Maximum temperature in Celsius
-        precipitation_probability: Probability of precipitation (0-100%)
-        hourly_data: Hourly weather data for the day
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param temperature_min: Minimum temperature in Celsius
+    :type temperature_min: float
+    :param temperature_max: Maximum temperature in Celsius
+    :type temperature_max: float
+    :param precipitation_probability: Probability of precipitation (0-100%)
+    :type precipitation_probability: float
+    :param hourly_data: Hourly weather data for the day
+    :type hourly_data: pd.DataFrame
 
-    Notes:
-        hourly_data contains the columns:
-        - date: datetime of this row
-        - temperature: Temperature
-        - apparent_temperature: Feels-like temperature
-        - humidity: Relative humidity (0-100%)
-        - wind_speed: Wind speed
-        - wind_direction: Wind direction in degrees
-        - wind_gusts: Wind gust speed
-        - weather_code: WMO weather code
-        - precipitation: Precipitation amount
-        - snowfall: Snowfall amount
-        - rain: Rain amount
-        - showers: Shower amount
-        - cloud_cover: Cloud cover percentage (0-100%)
-        - pressure_sea_level: Atmospheric pressure at sea level in hPa
-        - pressure_surface_level: Atmospheric pressure at surface level in hPa
-        Except for date (datetime) and weather_code (int), all columns contain float values.
-        There are 24 rows in hourly_data.
+    .. note::
+       The ``hourly_data`` DataFrame contains the following columns:
+
+       - **date** (*datetime*): Datetime of this row
+       - **temperature** (*float*): Temperature
+       - **apparent_temperature** (*float*): Feels-like temperature
+       - **humidity** (*float*): Relative humidity (0-100%)
+       - **wind_speed** (*float*): Wind speed
+       - **wind_direction** (*float*): Wind direction in degrees
+       - **wind_gusts** (*float*): Wind gust speed
+       - **weather_code** (*int*): WMO weather code
+       - **precipitation** (*float*): Precipitation amount
+       - **snowfall** (*float*): Snowfall amount
+       - **rain** (*float*): Rain amount
+       - **showers** (*float*): Shower amount
+       - **cloud_cover** (*float*): Cloud cover percentage (0-100%)
+       - **pressure_sea_level** (*float*): Atmospheric pressure at sea level in hPa
+       - **pressure_surface_level** (*float*): Atmospheric pressure at surface level in hPa
+
+       The DataFrame contains 24 rows (one per hour).
     """
 
     pass
@@ -190,33 +218,35 @@ class DailyWeather(DailyWeatherLite):
 
 @dataclass
 class WeatherForecastLite:
-    """
-    Weather forecast for multiple days. Only the most important information.
+    """Weather forecast for multiple days with only the most important information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        daily_data: Daily weather data.
-        hourly_data: Hourly weather data.
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param daily_data: Daily weather data
+    :type daily_data: pd.DataFrame
+    :param hourly_data: Hourly weather data
+    :type hourly_data: pd.DataFrame
 
-    Notes:
-        daily_data contains the columns:
-        - date: datetime of this row
-        - temperature_min: Minimum temperature
-        - temperature_max: Maximum temperature
-        - temperature_mean: Mean temperature
-        - apparent_temperature_mean: Mean feels-like temperature
-        - precipitation_probability: Probability of precipitation (0-100%)
-        - precipitation_sum: Sum of precipitation for the day
-        hourly_data contains the columns:
-        - date: datetime of this row
-        - temperature: Temperature (Celsius)
-        - apparent_temperature: feels-like temperature (Celsius)
-        - humidity: Relative humidity (0-100%)
-        - wind_speed: Wind speed (km/h)
-        - weather_code: WMO weather code
-        - precipitation: Precipitation amount (mm)
-        Except for date (datetime) and weather_code (int), all columns contain float values.
+    .. note::
+       The ``daily_data`` DataFrame contains the following columns:
 
+       - **date** (*datetime*): Datetime of this row
+       - **temperature_min** (*float*): Minimum temperature
+       - **temperature_max** (*float*): Maximum temperature
+       - **temperature_mean** (*float*): Mean temperature
+       - **apparent_temperature_mean** (*float*): Mean feels-like temperature
+       - **precipitation_probability** (*float*): Probability of precipitation (0-100%)
+       - **precipitation_sum** (*float*): Sum of precipitation for the day
+
+       The ``hourly_data`` DataFrame contains the following columns:
+
+       - **date** (*datetime*): Datetime of this row
+       - **temperature** (*float*): Temperature (Celsius)
+       - **apparent_temperature** (*float*): Feels-like temperature (Celsius)
+       - **humidity** (*float*): Relative humidity (0-100%)
+       - **wind_speed** (*float*): Wind speed (km/h)
+       - **weather_code** (*int*): WMO weather code
+       - **precipitation** (*float*): Precipitation amount (mm)
     """
 
     timestamp: float
@@ -224,19 +254,17 @@ class WeatherForecastLite:
     hourly_data: pd.DataFrame
 
     def umbrella_needed(self, threshold: float = 3.0) -> list[bool]:
-        """
-        Determines if an umbrella is needed for each day based on the weather data.
+        """Determines if an umbrella is needed for each day based on the weather data.
 
-        Internally, Umbrella points are calculated based on the following factors:
-            - Precipitation probability (0-100%)
-            - Precipitation amount, temperature, and time of precipitation
+        Umbrella points are calculated internally based on the following factors:
 
-        Args:
-            threshold: Minimum number of 'umbrella points' needed to return true
+        - Precipitation probability (0-100%)
+        - Precipitation amount, temperature, and time of precipitation
 
-        Returns:
-            list[bool]: List of boolean values, one per day. True if an umbrella
-                        is needed for that day, else False
+        :param threshold: Minimum number of 'umbrella points' needed to return True (default: 3.0)
+        :type threshold: float
+        :return: List of boolean values, one per day. True if an umbrella is needed for that day, False otherwise
+        :rtype: list[bool]
         """
         results = []
 
@@ -276,20 +304,19 @@ class WeatherForecastLite:
         return results
 
     def get_detailed_data(self, section_length: int = 6) -> pd.DataFrame:
-        """
-        Calculate weather data with customized section length
+        """Calculate weather data with customized section length.
 
-        Args:
-            section_length: Number of hours per section (default: 6 for 4 sections per day)
+        :param section_length: Number of hours per section (default: 6 for 4 sections per day)
+        :type section_length: int
+        :return: DataFrame with detailed data containing the following columns:
 
-        Returns:
-            DataFrame with detailed data containing:
-            - date: String representation of the section (e.g., "Jan 01 00-06")
-            - temperature_min: Minimum temperature in the section
-            - temperature_max: Maximum temperature in the section
-            - temperature_mean: Mean temperature in the section
-            - apparent_temperature_mean: Mean feels-like temperature in the section
-            - precipitation_sum: Sum of precipitation for the section
+                 - **date** (*str*): String representation of the section (e.g., "Jan 01 00-06")
+                 - **temperature_min** (*float*): Minimum temperature in the section
+                 - **temperature_max** (*float*): Maximum temperature in the section
+                 - **temperature_mean** (*float*): Mean temperature in the section
+                 - **apparent_temperature_mean** (*float*): Mean feels-like temperature in the section
+                 - **precipitation_sum** (*float*): Sum of precipitation for the section
+        :rtype: pd.DataFrame
         """
         detailed_rows = []
         # Group hourly data by date
@@ -328,40 +355,43 @@ class WeatherForecastLite:
 
 @dataclass
 class WeatherForecast(WeatherForecastLite):
-    """
-    Weather forecast for multiple days. Comprehensive information.
+    """Weather forecast for multiple days with comprehensive information.
 
-    Attributes:
-        timestamp: Time of the request (Unix Timestamp)
-        daily_data: Daily weather data.
-        hourly_data: Hourly weather data.
+    :param timestamp: Time of the request (Unix Timestamp)
+    :type timestamp: float
+    :param daily_data: Daily weather data
+    :type daily_data: pd.DataFrame
+    :param hourly_data: Hourly weather data
+    :type hourly_data: pd.DataFrame
 
-    Notes:
-        daily_data contains the columns:
-        - date: datetime of this row
-        - temperature_min: Minimum temperature
-        - temperature_max: Maximum temperature
-        - temperature_mean: Mean temperature
-        - apparent_temperature_mean: Mean feels-like temperature
-        - precipitation_probability: Probability of precipitation (0-100%)
-        - precipitation_sum: Sum of precipitation for the day
-        hourly_data contains the columns:
-        - date: datetime of this row
-        - temperature: Temperature
-        - apparent_temperature: Feels-like temperature
-        - humidity: Relative humidity (0-100%)
-        - wind_speed: Wind speed
-        - wind_direction: Wind direction in degrees
-        - wind_gusts: Wind gust speed
-        - weather_code: WMO weather code
-        - precipitation: Precipitation amount
-        - snowfall: Snowfall amount
-        - rain: Rain amount
-        - showers: Shower amount
-        - cloud_cover: Cloud cover percentage (0-100%)
-        - pressure_sea_level: Atmospheric pressure at sea level in hPa
-        - pressure_surface_level: Atmospheric pressure at surface level in hPa
-        Except for date (datetime) and weather_code (int), all columns contain float values.
+    .. note::
+       The ``daily_data`` DataFrame contains the following columns:
+
+       - **date** (*datetime*): Datetime of this row
+       - **temperature_min** (*float*): Minimum temperature
+       - **temperature_max** (*float*): Maximum temperature
+       - **temperature_mean** (*float*): Mean temperature
+       - **apparent_temperature_mean** (*float*): Mean feels-like temperature
+       - **precipitation_probability** (*float*): Probability of precipitation (0-100%)
+       - **precipitation_sum** (*float*): Sum of precipitation for the day
+
+       The ``hourly_data`` DataFrame contains the following columns:
+
+       - **date** (*datetime*): Datetime of this row
+       - **temperature** (*float*): Temperature
+       - **apparent_temperature** (*float*): Feels-like temperature
+       - **humidity** (*float*): Relative humidity (0-100%)
+       - **wind_speed** (*float*): Wind speed
+       - **wind_direction** (*float*): Wind direction in degrees
+       - **wind_gusts** (*float*): Wind gust speed
+       - **weather_code** (*int*): WMO weather code
+       - **precipitation** (*float*): Precipitation amount
+       - **snowfall** (*float*): Snowfall amount
+       - **rain** (*float*): Rain amount
+       - **showers** (*float*): Shower amount
+       - **cloud_cover** (*float*): Cloud cover percentage (0-100%)
+       - **pressure_sea_level** (*float*): Atmospheric pressure at sea level in hPa
+       - **pressure_surface_level** (*float*): Atmospheric pressure at surface level in hPa
     """
 
     pass
