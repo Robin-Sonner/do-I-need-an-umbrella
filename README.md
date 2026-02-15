@@ -33,21 +33,31 @@ This may take a while. Once the build completes, run:
 
 ```bash
 docker run -it -p 8888:8888 -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix dinau
-jupyter notebook
+```
+Then you can run:
+
+```bash
 python3 app/main.py
 ```
-The last command will start the desktop application. 
-
-To access the Jupyter Notebook (for the PyQtGraph guide), open a browser on the **host** machine and navigate to:
+to open the desktop application or
+```bash
+jupyter notebook
+```
+to start the Jupyter Server. To access the Jupyter Notebook (for the PyQtGraph guide), open a browser on the **host** machine and navigate to:
 ```
 http://localhost:8888/tree
 ```
-Small Warning: I assume (haven't tested it) that in this configuration port 8888 of the docker machine will be exposed not just
-to the host, but to anyone on the same network, meaning don't do this on a public network.
+where you can open ```pyqtgraph_guide.ipynb```
 
-Second Warning: I assume that the host machine is running Linux (xhost is not available on Windows, and without it the 
-application will crash due to not finding a display). As far as I know, Win11 has some magic stuff for handling the display, 
-so you can just use ```docker run -it```. Windows10 does not (I tested that)
+Notes:
+- The application and the jupyter Notebook can't run at the same time (both block the terminal while active).
+  You can run them one after the other by shutting down the previous (closing the app or shutting down the jupyter server)
+- I assume (haven't tested it) that in this configuration port 8888 of the docker machine will be exposed not just
+  to the host, but to anyone on the same network, meaning don't do this on a public network.
+- I assume that the host machine is running Linux (xhost is not available on Windows, and without it the
+  application will crash due to not finding a display). As far as I know, Win11 has some magic stuff for handling the display,
+  so you can just use ```docker run -it```. Windows10 does not (I tested that)
+
 ---
 
 ### Local Installation (Not recommended)
@@ -112,7 +122,7 @@ As part of the project, a library was developed. The library is released on Test
 
 ## Application
 As part of the project a desktop application was developed, featuring releases for windows (.exe files). The releases are available on GitHub:
-[https://github.com/Robin-Sonner/do-I-need-an-umbrella/releases](https://github.com/Robin-Sonner/do-I-need-an-umbrella/releases)
+[https://github.com/freiburg-missing-semester-course/project-Robin-Sonner/releases/tag/v1.0.0](https://github.com/freiburg-missing-semester-course/project-Robin-Sonner/releases/tag/v1.0.0)
 
 ---
 
