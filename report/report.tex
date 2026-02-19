@@ -25,14 +25,14 @@ Continuous Integration (CI) and Continuous Deployment (CD) are established pract
 
 The theoretical foundations of CI/CD were established by Fowler and Foemmel \cite{fowler2006}, who defined ten core practices intended to increase the speed of software development feedback cycles and improve software quality. These practices span source code management, build automation, testing, environment configuration, system visibility, and deployment.
 
-In the project, a Weather Application and a Python library were developed together with two CI/CD pipelines implemented using Jenkins and GitHub Actions. The report mainly addresses the following questions:
+In the project two CI/CD Pipelines for Python were implemented using Jenkins and GitHub Actions. The Pipelines functionality was tested by an example Python project including a Library and a Weather Application. The report mainly addresses the following questions:
 
 \begin{itemize}
 \item What can a CI/CD pipeline provide for Python projects (Section 2)?
 \item How do Jenkins and GitHub Actions compare as CI/CD platforms (Section 3)?
 \end{itemize}
 
-Considering that the Application displays weather information in the form of charts, it's also beneficial to explore chart creation in python. The graphical user interface uses PyQt6, which pairs well with PyQtGraph. Section 4 outlines the creation of a usage demonstration for PyQtGraph to generate the Dual-Axis Temperature/Precipitation charts displayed in the application. 
+Considering that the Application displays weather information in the form of charts, it's also beneficial to explore chart creation in python. The graphical user interface uses PyQt6, which pairs well with PyQtGraph. Section 4 reports on the creation of a usage demonstration for PyQtGraph to generate the Dual-Axis Temperature/Precipitation charts displayed in the application. 
 
 
 \section{CI/CD for Python}
@@ -49,18 +49,18 @@ To allow other people to use the projects library, it must be documented. For Py
 \paragraph{Continuous Deployment.} The project deploys both an application and a library package. I use annotated tags to trigger releases, with tag names specifying version numbers and annotations providing release messages.
 Python code executes without compilation but requires a compatible interpreter and dependencies. Application deployment packages the interpreter and dependencies with the source code to create executables. The pyinstaller tool performs this packaging. Outside of development I normally use windows. Therefore, the weather application releases as a Windows executable. Linux releases would follow the same procedure. Built executables are published as GitHub releases.
 
-Python packages typically distribute via PyPI, enabling installation through pip. This project uses TestPyPI (\footnote{\url{https://test.pypi.org/}}), which mirrors PyPI functionality without affecting the production Package Index. The package's limited scope (primarily CI/CD exploration) offers minimal utility to external users. Should the project be further expanded release to PyPI could be considered.
+Python packages typically distribute via PyPI, enabling installation through pip. This project uses TestPyPI \footnote{\url{https://test.pypi.org/}}, which mirrors PyPI functionality without affecting the production Package Index. The package's limited scope (primarily CI/CD exploration) offers minimal utility to external users. Should the project be further expanded release to PyPI could be considered. The package is built based on a pyproject.toml which specifies it's dependencies, compatible python versions and other metadata.
 
-Package documentation hosts on ReadTheDocs\footnote{\url{https://readthedocs.io/}}. Documentation deployment to ReadTheDocs occurs outside CI/CD automation, as the platform builds documentation independently. The platform uses sphinx to build the documentation. Pipeline-verified Sphinx compatibility ensures ReadTheDocs can build correctly. ReadTheDocs is free only for public repositories. A public repository\footnote{\url{https://github.com/Robin-Sonner/do-I-need-an-umbrella}} mirroring the code from the private GitHub classroom repository was created for usage of ReadTheDocs.
+Package documentation is hosted on ReadTheDocs\footnote{\url{https://readthedocs.io/}}. Documentation deployment to ReadTheDocs occurs outside CI/CD automation, as the platform builds documentation independently. The platform uses sphinx to build the documentation, so verifying Sphinx compatibility as part of the continuos integration helps to ensure ReadTheDocs can build correctly. ReadTheDocs is free only for public repositories, so a public repository\footnote{\url{https://github.com/Robin-Sonner/do-I-need-an-umbrella}} mirroring the code from the private GitHub classroom repository.
 
 
 \section{Jenkins and GitHub Actions}
 
-Jenkins and GitHub Actions represent two widely adopted CI/CD platforms capable of providing the functionalities described in Section 2. Jenkins \footnote{\url{https://www.jenkins.io/}}, an open-source automation server released in 2011, supports self-hosted and managed deployments. GitHub Actions\footnote{\url{https://github.com/features/actions}}, introduced in 2019 is a proprietary solution deeply integrated with GitHub repositories.
+Jenkins and GitHub Actions represent two widely adopted CI/CD platforms capable of providing the functionalities described in Section 2. Jenkins \footnote{\url{https://www.jenkins.io/}} is an open-source automation server released in 2011 for self-hosting. GitHub Actions\footnote{\url{https://github.com/features/actions}}, introduced in 2019 is a proprietary solution deeply integrated with GitHub repositories and often hosted by GitHub, though self-hosting runners is possible.
 
 \paragraph{Setup.} GitHub provides hosted runners for Windows and Linux with preconfigured Python versions. A test matrix spanning multiple operating systems (Linux, Windows) and Python versions (3.13, 3.14) can therefore simply be specified in pipeline configurations, with GitHub managing all of the needed infrastructure. Hosted runners are provided at no cost for public repositories and a free tier of 2000 minutes of runner usage per month is offered for private repositories.
 
-The Jenkins instance was self-hosted. Due to the complexity of the final requirements (multiple operating systems and python versions) an iterative approach was chosen. Initially the Jenkins Server was directly installed on a Windows 10 host machine, using the built-in node as pipeline executor. This configuration presents security risks: malicious shell commands injected into pipeline code execute with host privileges, exploitable by any contributor with repository write access. Platform constraints limited testing to the host environment, disallowing testing on Linux verification. 
+The Jenkins instance was self-hosted. Due to the complexity of the final requirements (multiple operating systems and python versions) an iterative approach was chosen. Initially the Jenkins Server was directly installed on a Windows 10 host machine, using the built-in node as pipeline executor. This configuration presents security risks: malicious shell commands injected into pipeline code execute with host privileges, exploitable by any contributor with repository write access. Platform constraints limited testing to the host environment, disallowing testing on Linux. 
 
 Jenkins was later reinstalled as a Docker Container. This time two permanent agents (Linux and Windows hosts) were set up and the built-in node disabled. The Jenkins server then only orchestrated pipeline execution across the two agents. Due to the Agents different operating system (Windows10 and Linux Mint) and both having Python 3.13 and 3.14 set up, the required matrix testing was now executed. Future enhancement would replace permanent agents with dynamic agents, created from templates (e.g., Dockerfiles) and destroyed post-execution. Due to time constraints this step wasn't taken.
 
@@ -95,8 +95,17 @@ Jenkins provides multiple automation approaches: freestyle projects, single-bran
 \end{Verbatim}
 Groovy syntax is less readable than GitHub Actions YAML Syntax, primarily due to backslash escape requirements (backslash is the escape character of groovy). The pipeline implementation uses manual GitHub API calls for status notifications and artifact uploads. Plug-ins like GitHub Checks \footnote{\url{https://plugins.jenkins.io/github-checks/}} could simplify this, but need the Jenkins instance to be authenticated as a GitHub App, requiring it to be exposed outside of the network.
 
+\begin{figure}[H]
+\begin{center}
+  \includegraphics[scale=0.5]{pipeline.png}
+  \caption{Visualisation of a successful pipeline run in Jenkins}
+  \label{fig:pipeline}
+\end{center}
+\end{figure}
+
+
 \paragraph{Plugin Ecosystem.}
-Jenkins provides an extensive plugin system enabling integration with numerous source control platforms (GitHub, GitLab, Bitbucket, Gitea, SVN) through dedicated plugins. Other plugins can modify the UI, and enable additional functionalities such as dynamic agent creation via Docker Templates. In the project the Blue Ocean plugin was used to modify the UI, creating a Pipeline visualisation which the default Jenkins UI lacks. GitHub Actions features no comparable plugin architecture. Limited Extensibility is supported through community-created actions which can be invoked within pipelines (e.g., \texttt{uses: actions/setup-python@v5}). GitHub Actions are tightly integrated in GitHub repositories, creating a vendor lock-in.
+Jenkins provides an extensive plugin system enabling integration with numerous source control platforms (GitHub, GitLab, Bitbucket, Gitea, SVN) through dedicated plugins. Other plugins can modify the UI, and enable additional functionalities such as dynamic agent creation via Docker Templates. In the project the Blue Ocean plugin was used to modify the UI, creating the Pipeline visualisation shown in figure \ref{fig:pipeline}. GitHub Actions features no comparable plugin architecture. Limited Extensibility is supported through community-created actions which can be invoked within pipelines (e.g., \texttt{uses: actions/setup-python@v5}). GitHub Actions are tightly integrated in GitHub repositories, creating a vendor lock-in.
 
 
 \section{PyQtGraph}
@@ -134,9 +143,9 @@ More advanced setups (e.g. Jenkins Server via Docker, multiple agents, potential
 
 Jenkins can be used with a wide range of Source control system. It's usage also extends software development. Freestyle projects support arbitrary PowerShell and Bash script execution with time-based and external event triggers, enabling the automation of a variety of tasks (e.g. automatic creation of backups).
 
-In regards to the application there are two interesting results.
-The cell by cell structure of Jupyter notebooks allows to increase the complexity of the example gradually and while they are not designed for executing GUI applications, they can be configured to support that. This allows for demonstrations of libraries tightly coupled to application frameworks, in this case PyQtGraph.
-The second finding is that the Open-Meteo API offers an extensive range of weather information, alongside air quality data, marine data, and a historical weather database. Furthermore it's Web UI can generate Python example code for any possible API call. The application uses only a small subset of the Open-Meteo API's capabilities.
+In regards to the application there are two interesting findings.
+Jupyter notebooks make for excellent usage demonstrations, with the cell by cell structure of allowing to increase the complexity of the example gradually. While not designed for executing GUI applications, they can be configured to support that, making demonstrations of libraries tightly coupled to application frameworks (e.g. PyQtGraph) possible.
+Secondly I would like to acknowledge and point out the Open Metoe ressource. This API offers an extensive range of weather information, alongside air quality data, marine data, and a historical weather database. Furthermore it's Web UI can generate Python example code for any possible API call. The application currently uses only a small subset of its capabilites
 
 
 \section{Conclusion}
@@ -145,7 +154,9 @@ The CI/CD pipeline created in the project shows that the integration and deploym
 
 The project compared Jenkins to GitHub Actions. GitHub Actions advantage lies in its simplicity of use, needing no setup beyond defining the pipeline and configuring its secrets. A self hosted Jenkins instance needs much more work to set up and to maintain. Its advantage lies in its versatility integrating with a broad range of source control systems and being a more general automation platform capable of a wide variety of tasks. 
 
-The project features a PyQtGraph usage demonstration. Jupyter notebooks cell structure was found to be well suited for usage demonstrations, allowing for code examples with progressively increased complexity. This allowed building up to complex result with previous simpler steps ensuring the viewer isn't overwhelmed. Despite PyQtGraph's deep integration into the PyQt Framework its usage can still be demonstrated in a Jupyter notebooks needing only the activation of qt's eventloop and a few lines of support code to create a small QtApplication.
+Jupyter notebooks cell structure was found to be well suited for usage demonstrations, allowing for code examples with progressively increased complexity. By building up to complex result with previous simpler steps the viewer isn't overwhelmed. Despite PyQtGraph's deep integration into the PyQt Framework its usage can still be demonstrated in a Jupyter notebooks.
+
+Possible further work on the project could include switching from permanent to dynamic agents in the Jenkins Server, improving the documentation with code examples, and expanding the library and application to make use more of Open Meteo's capabilities. Expanding the CI/CD with a client-run pre-commit pipeline to at least partially check the code (linting and formatting) would also be beneficial. This would take stress from the server-run Pipeline and improve the commit history by avoiding small correctional commits needed after the server-run Pipeline failed.
 
 
 \bibliographystyle{unsrt}
@@ -164,5 +175,76 @@ Plots & The application uses matplotlib and PyQtGraph to generate its charts. Th
 \LaTeX & This report was written in \LaTeX, but there is nothing to report. \\
 LLM & There is nothing to report.
 \end{tabular}
+
+
+\appendix
+
+\section*{Appendix A: Glossary}
+The Glossary defines various terms used in the report, provided they were not part of the lecture (e.g. matplotlib) and are not common knowledge (e.g. pip).
+\begin{description}
+
+\item[black] A Python code formatter that automatically reformats source code to conform to a consistent style
+
+\item[CI/CD] Continuous Integration and Continuous Deployment/Delivery. The Automation of the integration of code changes and the deployment of code to delivery to production environments.
+
+\item[Continuous Deployment (CD)] The automated process of delivering validated code changes to production or release environments after passing all pipeline stages.
+
+\item[Continuous Integration (CI)] The automated process of integrating code changes into a repository, where each integration is verified through automated builds and tests.
+
+\item[Dynamic Agent] A Jenkins agent that is created on demand from a template (e.g., a Dockerfile) at the start of a pipeline run and destroyed immediately after, ensuring a clean and reproducible environment for every build.
+
+\item[Git Hook] A script that Git executes automatically before or after events such as a commit or push. In the project, pre-push hooks were used to trigger the Jenkins pipeline without exposing the server to the internet.
+
+\item[Matrix Testing] A CI strategy in which the same pipeline stages are executed across a defined matrix of environment combinations (e.g., operating systems and programming language versions) to verify compatibility.
+
+\item[Node (Jenkins)] A machine registered with a Jenkins server that is capable of executing pipeline jobs. The built-in node runs on the server itself, while additional nodes are registered as agents.
+
+\item[Permanent Agent] A Jenkins build agent that runs continuously on a dedicated host machine and is always available to accept pipeline jobs. Unlike dynamic agents, permanent agents are not created or destroyed per run and may carry state between builds.
+
+\item[Pipeline] A defined sequence of automated steps (stages) that code changes pass through, covering tasks such as linting, testing, building, and deployment.
+
+\item[Pre-commit Hook] A Git hook that executes before a commit is finalised, commonly used to run linting or formatting checks locally to prevent low-quality code from entering the repository.
+
+\item[Pre-push Hook] A Git hook that executes before a git push is sent to the remote repository. In this project it was used to trigger the Jenkins pipeline via an external trigger token.
+
+\item[Runner] The GitHub Actions equivalent of a Jenkins agent: a server (hosted by GitHub or self-hosted) that executes the steps defined in a workflow file.
+
+\item[Sandbox (Jenkins)] A security mechanism in Jenkins that restricts the Groovy methods available inside a Jenkinsfile to a safe subset, preventing pipeline code from executing arbitrary privileged operations on the server.
+
+\item[Secret] A sensitive value such as an API token that is stored securely in the CI/CD platform (e.g., the Jenkins Credential Store or GitHub repository settings) and injected into pipeline runs without being exposed in logs.
+
+\item[Stage] A logical grouping of steps within a CI/CD pipeline, such as \emph{Lint}, \emph{Test}, or \emph{Deploy}, used to organise and visualise pipeline execution.
+
+\item[GitHub Actions] A proprietary CI/CD platform integrated with GitHub repositories, allowing pipeline workflows to be defined in YAML files and executed on GitHub-hosted or self-hosted runners.
+
+\item[GitHub Webhook] An HTTP callback triggered by repository events (e.g., a push) that notifies external service such as Jenkins to start a pipeline run.
+
+\item[Groovy] The programming language used to write Jenkins pipeline definitions (Jenkinsfiles).
+
+\item[isort] A Python utility that automatically sorts and organises import statements in source files.
+
+\item[Jenkins] An open-source automation server used for building, testing, and deploying software.
+
+\item[Jenkinsfile] A text file checked into source control that defines a Jenkins pipeline.
+
+\item[PyInstaller] A tool that bundles a Python application together with its interpreter and dependencies into a standalone executable.
+
+\item[PyPI] The official third-party software repository for Python, from which packages can be installed using pip.
+
+\item[PyQt6] A set of Python bindings for the Qt application framework, used to build cross-platform graphical user interfaces.
+
+\item[PyQtGraph] A Python data visualization library built on PyQt.
+
+\item[ReadTheDocs] A documentation hosting platform that automatically builds and publishes Sphinx-based documentation from a source repository.
+
+\item[Sphinx] A documentation generation tool that produces documentation in various output formats (HTML, PDF, etc.) based on docstrings of the provided Source code.
+
+\item[TestPyPI] A separate instance of the Python Package Index intended for testing package distribution workflows without affecting the production PyPI index.
+
+\item[Vendor Lock-in] A situation in which a user or organisation becomes dependent on a specific vendor's products or services and cannot easily switch to an alternative.
+
+\item[YAML] A human-readable data serialisation language commonly used for configuration files such as the GitHub Actions workflow definitions.
+
+\end{description}
 
 \end{document}
