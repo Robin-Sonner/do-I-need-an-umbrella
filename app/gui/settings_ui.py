@@ -3,6 +3,7 @@
 import configparser
 from pathlib import Path
 
+from dinau import Location
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
@@ -16,8 +17,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from dinau import Location
 
 
 class ConfigManager:

@@ -1,6 +1,7 @@
 """Widget for displaying today's weather conditions."""
 
 import pandas as pd
+from dinau import DailyWeather
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFrame,
@@ -10,8 +11,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from dinau import DailyWeather
 
 from .utilities import get_weather_emoji
 from .weather_chart import WeatherChart

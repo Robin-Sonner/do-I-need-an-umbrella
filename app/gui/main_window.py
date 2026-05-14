@@ -1,5 +1,6 @@
 """Main window for the weather application."""
 
+from dinau import Location, WeatherClient
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -11,8 +12,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from dinau import Location, WeatherClient
 
 from .current_weather_ui import CurrentWeatherWidget
 from .forecast_weather_ui import ForecastWeatherWidget

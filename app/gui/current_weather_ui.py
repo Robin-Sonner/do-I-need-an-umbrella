@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from dinau import CurrentWeather
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFrame,
@@ -12,8 +13,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from dinau import CurrentWeather
 
 from .utilities import WEATHER_DESCRIPTION, get_weather_emoji
 

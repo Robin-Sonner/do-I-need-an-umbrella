@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import numpy as np
-
 from dinau import CurrentWeather, CurrentWeatherLite, Location, WeatherClient
 
 

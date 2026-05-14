@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
+from dinau import WeatherForecast
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
@@ -15,8 +16,6 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from dinau import WeatherForecast
 
 from .utilities import WEATHER_DESCRIPTION, get_weather_emoji
 from .weather_chart import WeatherChart
